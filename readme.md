@@ -1,4 +1,5 @@
 run 
-npm init -y
+npm install
 
 node server.js
+loccalsever port 300
