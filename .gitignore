@@ -1,0 +1,77 @@
+# Created by Gemini on Friday, August 29, 2025
+# A comprehensive .gitignore for Node.js projects
+
+### Dependencies ###
+# The node_modules directory contains all of your project's dependencies.
+# It can be very large and is easily recreated by running `npm install`.
+node_modules/
+
+### Logs ###
+# Log files are often specific to a user's machine or a single session.
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+### Environment Variables ###
+# Never commit your environment variables. This file often contains sensitive
+# API keys, database passwords, and other secrets.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+.node_modules
+
+### Build & Distribution ###
+# These directories contain the compiled or bundled output of your project.
+# They should be generated during your build process, not stored in source control.
+dist/
+build/
+.next/
+out/
+coverage/
+.vercel/
+.netlify/
+
+### Operating System Files ###
+# These files are created by various operating systems and are not part of your project.
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+
+### IDE & Editor Config ###
+# User-specific settings for code editors.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+### Miscellaneous ###
+# Other temporary or generated files.
+.npm/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

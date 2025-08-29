@@ -1,0 +1,72 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    color: #333;
+    text-align: center;
+    padding: 20px;
+}
+
+h1, h2 {
+    color: #0056b3;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, 35px);
+    grid-template-rows: repeat(10, 35px);
+    border: 2px solid #0056b3;
+}
+
+.cell {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #add8e6;
+    background-color: #e0f7fa;
+    box-sizing: border-box; /* Important for border inclusion */
+}
+
+/* Cell States */
+.ship {
+    background-color: #708090; /* Slate Gray */
+}
+
+.hit {
+    background-color: #ff4136; /* Red */
+}
+
+.miss {
+    background-color: #ffffff; /* White */
+}
+
+#opponent-grid .cell:not(.hit):not(.miss):hover {
+    background-color: #b0e0e6; /* Powder Blue */
+    cursor: pointer;
+}
+
+#status-message {
+    font-size: 1.2em;
+    font-weight: bold;
+    min-height: 25px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+button:hover {
+    background-color: #218838;
+}
