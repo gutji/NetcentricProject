@@ -1,4 +1,4 @@
-// server.js (Refactored for Socket.IO)
+// server/server.js - Socket.IO Battleship Server
 
 const express = require('express');
 const http = require('http');
@@ -6,8 +6,14 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // React dev server
+    methods: ["GET", "POST"]
+  }
+});
 
+// Serve static files if needed
 app.use(express.static('public'));
 
 let waitingPlayer = null;
@@ -115,5 +121,6 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+    console.log(`🚀 Battleship server is listening on port ${PORT}`);
+    console.log(`📱 React frontend should connect from http://localhost:5173`);
 });

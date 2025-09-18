@@ -1,0 +1,24 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f8ff;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  color: #0056b3;
+  margin-bottom: 10px;
+}
+
+.status-message {
+  font-size: 1.2em;
+  font-weight: bold;
+  min-height: 25px;
+  margin: 20px 0;
+}

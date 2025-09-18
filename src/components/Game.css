@@ -1,0 +1,54 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.game-container {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  margin-top: 20px;
+}
+
+.grid-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.grid-container h2 {
+  color: #0056b3;
+  margin-bottom: 10px;
+}
+
+.placement-controls {
+  margin-top: 20px;
+}
+
+.placement-controls p {
+  margin-bottom: 15px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    flex-direction: column;
+    gap: 30px;
+  }
+}
