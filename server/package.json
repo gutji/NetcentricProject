@@ -1,7 +1,7 @@
 {
   "name": "battleship-server",
   "version": "1.0.0",
-  "description": "Socket.IO server for battleship game",
+  "description": "Enhanced Socket.IO server for battleship game with admin UI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

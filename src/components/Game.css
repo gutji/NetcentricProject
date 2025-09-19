@@ -1,54 +1,381 @@
-.game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
+/* Enhanced Game Component Styles */
 
 .game-container {
-  display: flex;
-  justify-content: center;
-  gap: 50px;
-  margin-top: 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
 }
 
-.grid-container {
+/* Nickname Phase */
+.nickname-phase {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.nickname-phase h2 {
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.nickname-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.nickname-input input {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+}
+
+.nickname-input button {
+  padding: 12px 24px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nickname-input button:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+.nickname-input button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Lobby Phase */
+.lobby-phase {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.lobby-phase h2 {
+  font-size: 2.2em;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.join-queue-btn {
+  padding: 16px 32px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.3em;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 20px 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.join-queue-btn:hover {
+  background: #0056b3;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Connected Players */
+.connected-players {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 30px;
+  backdrop-filter: blur(10px);
+}
+
+.connected-players h3 {
+  margin-bottom: 15px;
+  color: #ffd700;
+}
+
+.players-list {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
 }
 
-.grid-container h2 {
-  color: #0056b3;
-  margin-bottom: 10px;
+.player-nickname {
+  font-weight: bold;
+  color: #ffd700;
 }
 
-.placement-controls {
-  margin-top: 20px;
+.player-score {
+  color: #28a745;
+  font-weight: bold;
 }
 
-.placement-controls p {
+.player-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.player-status.connected { background: #17a2b8; }
+.player-status.lobby { background: #28a745; }
+.player-status.waiting { background: #ffc107; color: #333; }
+.player-status.in_game { background: #dc3545; }
+
+/* Game Phase */
+.game-phase {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.game-boards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 30px 0;
+  justify-items: center;
+}
+
+.board-section {
+  text-align: center;
+}
+
+.board-section h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Game Status */
+.game-status {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.status-message {
+  text-align: center;
   margin-bottom: 15px;
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: #28a745;
-  color: white;
+.message {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1em;
+  display: inline-block;
+}
+
+.message.info { background: rgba(23, 162, 184, 0.8); }
+.message.success { background: rgba(40, 167, 69, 0.8); }
+.message.warning { background: rgba(255, 193, 7, 0.8); color: #333; }
+.message.error { background: rgba(220, 53, 69, 0.8); }
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.players-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 140px;
+}
+
+.my-player {
+  border: 2px solid #28a745;
+}
+
+.opponent-player {
+  border: 2px solid #dc3545;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+
+.player-score {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.vs {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.game-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(255, 193, 7, 0.2);
+  border-radius: 8px;
+  border: 2px solid #ffc107;
+}
+
+.timer-label {
+  font-size: 0.9em;
+  margin-bottom: 5px;
+}
+
+.timer-value {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.turn-indicator {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.my-turn {
+  background: rgba(40, 167, 69, 0.3);
+  border: 2px solid #28a745;
+  color: #28a745;
+}
+
+.opponent-turn {
+  background: rgba(108, 117, 125, 0.3);
+  border: 2px solid #6c757d;
+  color: #6c757d;
+}
+
+/* Player Controls */
+.placement-controls {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 25px;
+  margin: 20px auto;
+  max-width: 500px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.ship-placement h3 {
+  margin-bottom: 10px;
+  color: #ffd700;
+}
+
+.placement-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.place-random-btn, .ready-btn {
+  padding: 12px 24px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
   cursor: pointer;
-  margin-top: 15px;
+  transition: all 0.3s ease;
 }
 
-button:hover {
-  background-color: #218838;
+.place-random-btn {
+  background: #17a2b8;
+  color: white;
 }
 
+.place-random-btn:hover {
+  background: #138496;
+  transform: translateY(-2px);
+}
+
+.ready-btn {
+  background: #28a745;
+  color: white;
+}
+
+.ready-btn:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+.ready-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.hint {
+  margin: 10px 0;
+  color: #adb5bd;
+  font-style: italic;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .game-container {
+  .game-boards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .game-info {
     flex-direction: column;
-    gap: 30px;
+    text-align: center;
+  }
+  
+  .players-info {
+    justify-content: center;
+  }
+  
+  .placement-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .nickname-input {
+    flex-direction: column;
+    align-items: center;
   }
 }

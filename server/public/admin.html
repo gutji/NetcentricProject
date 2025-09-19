@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battleship Server Admin</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #89b4fa;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #313244;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #a6e3a1;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #bac2de;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-panel {
+            background: #313244;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .reset-btn {
+            background: #f38ba8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .reset-btn:hover {
+            background: #eba0ac;
+        }
+        
+        .clients-section {
+            background: #313244;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            color: #89b4fa;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .client-card {
+            background: #45475a;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #89b4fa;
+        }
+        
+        .client-nickname {
+            font-weight: bold;
+            color: #f9e2af;
+            margin-bottom: 5px;
+        }
+        
+        .client-info {
+            font-size: 0.9em;
+            color: #bac2de;
+            margin: 3px 0;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status.connected { background: #74c0fc; color: #1e1e2e; }
+        .status.lobby { background: #a6e3a1; color: #1e1e2e; }
+        .status.waiting { background: #f9e2af; color: #1e1e2e; }
+        .status.in_game { background: #f38ba8; color: white; }
+        
+        .logs-section {
+            background: #313244;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 8px;
+            margin: 5px 0;
+            background: #45475a;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .timestamp {
+            color: #585b70;
+            margin-right: 10px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚢 Battleship Server Admin Panel</h1>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="clientCount">0</div>
+                <div class="stat-label">Connected Clients</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeGames">0</div>
+                <div class="stat-label">Active Games</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="waitingPlayers">0</div>
+                <div class="stat-label">Waiting Players</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="serverUptime">0s</div>
+                <div class="stat-label">Server Uptime</div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <h3>Server Controls</h3>
+            <button class="reset-btn" onclick="resetServer()">🔄 Reset All Game State</button>
+            <p style="margin-top: 10px; color: #585b70; font-size: 0.9em;">
+                This will disconnect all clients and reset scores
+            </p>
+        </div>
+        
+        <div class="clients-section">
+            <h3 class="section-title">Connected Clients</h3>
+            <div class="clients-grid" id="clientsGrid">
+                <!-- Clients will be populated here -->
+            </div>
+        </div>
+        
+        <div class="logs-section">
+            <h3 class="section-title">Server Logs</h3>
+            <div id="serverLogs">
+                <!-- Logs will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const serverStartTime = Date.now();
+        
+        // Update uptime every second
+        setInterval(() => {
+            const uptime = Math.floor((Date.now() - serverStartTime) / 1000);
+            document.getElementById('serverUptime').textContent = formatUptime(uptime);
+        }, 1000);
+        
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+        
+        // Listen for stats updates
+        socket.on('statsUpdate', (stats) => {
+            updateStats(stats);
+            updateClientsGrid(stats.connectedClients);
+        });
+        
+        function updateStats(stats) {
+            document.getElementById('clientCount').textContent = stats.clientCount;
+            document.getElementById('activeGames').textContent = stats.activeGames;
+            document.getElementById('waitingPlayers').textContent = stats.waitingPlayers;
+        }
+        
+        function updateClientsGrid(clients) {
+            const grid = document.getElementById('clientsGrid');
+            
+            if (clients.length === 0) {
+                grid.innerHTML = '<p style="color: #585b70; text-align: center; grid-column: 1 / -1;">No clients connected</p>';
+                return;
+            }
+            
+            grid.innerHTML = clients.map(client => `
+                <div class="client-card">
+                    <div class="client-nickname">${client.nickname || 'Anonymous'}</div>
+                    <div class="client-info">ID: ${client.id.substring(0, 8)}...</div>
+                    <div class="client-info">Score: ${client.score}</div>
+                    <div class="client-info">Status: <span class="status ${client.status}">${client.status}</span></div>
+                </div>
+            `).join('');
+        }
+        
+        function addLog(message) {
+            const logsContainer = document.getElementById('serverLogs');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            
+            logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+            
+            // Keep only last 50 log entries
+            const logs = logsContainer.children;
+            if (logs.length > 50) {
+                logsContainer.removeChild(logs[logs.length - 1]);
+            }
+        }
+        
+        async function resetServer() {
+            if (!confirm('Are you sure you want to reset all game state? This will disconnect all players.')) {
+                return;
+            }
+            
+            const resetBtn = document.querySelector('.reset-btn');
+            resetBtn.textContent = '🔄 Resetting...';
+            resetBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('🔄 Server state reset by admin');
+                    // Reset display
+                    updateStats({ clientCount: 0, activeGames: 0, waitingPlayers: 0 });
+                    updateClientsGrid([]);
+                } else {
+                    addLog('❌ Failed to reset server state');
+                }
+            } catch (error) {
+                addLog('❌ Error resetting server: ' + error.message);
+            } finally {
+                resetBtn.textContent = '🔄 Reset All Game State';
+                resetBtn.disabled = false;
+            }
+        }
+        
+        // Initial stats load
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(stats => {
+                updateStats(stats);
+                updateClientsGrid(stats.connectedClients);
+            })
+            .catch(error => {
+                addLog('❌ Failed to load initial stats: ' + error.message);
+            });
+        
+        // Add connection logs
+        socket.on('connect', () => {
+            addLog('🟢 Admin panel connected to server');
+        });
+        
+        socket.on('disconnect', () => {
+            addLog('🔴 Admin panel disconnected from server');
+        });
+        
+        // Initial log
+        addLog('🚀 Server admin panel initialized');
+    </script>
+</body>
+</html>
