@@ -5,14 +5,32 @@ const http = require('http');
 const { Server } = require("socket.io");
 const path = require('path');
 
+const LAN_CLIENT = process.env.LAN_CLIENT || `http://192.168.1.50:5173`;
+const isDev = process.env.NODE_ENV !== 'production';
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:5173", "http://localhost:3000"],
+        origin: isDev ? '*' : [
+            "http://localhost:5173", 
+            "http://localhost:3000",
+            LAN_CLIENT
+        ],
         methods: ["GET", "POST"]
     }
 });
+
+const cors = require('cors');
+
+app.use(cors({
+    origin: isDev ? '*' : [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        LAN_CLIENT
+    ],
+    methods: ["GET","POST"]
+}));
 
 // Serve static files for server UI
 app.use(express.static(path.join(__dirname, 'public')));
@@ -78,6 +96,16 @@ function updateClientStats() {
         })),
         activeGames: gameState.activeGames.size,
         waitingPlayers: gameState.waitingPlayers.length
+    });
+
+    // Also broadcast client list to all game clients so UIs update
+    io.emit('clientsInfo', {
+        connectedClients: Array.from(gameState.connectedClients.values()).map(c => ({
+            id: c.id,
+            nickname: c.nickname,
+            score: c.score,
+            status: c.status
+        }))
     });
 }
 
@@ -371,8 +399,10 @@ io.on('connection', (socket) => {
     });
 });
 
+const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    console.log(`Enhanced Battleship Server running on port ${PORT}`);
-    console.log(`Admin interface: http://localhost:${PORT}`);
+
+server.listen(PORT, HOST, () => {
+  console.log(`Enhanced Battleship Server running on http://${HOST}:${PORT}`);
+  console.log(`Admin interface: http://${HOST}:${PORT}`);
 });

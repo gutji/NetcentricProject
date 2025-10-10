@@ -1,9 +1,8 @@
 // src/components/Game.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import type { GameState, Player, CellState, Ship, GameMessage, ClientInfo } from '../types/game';
-import { GRID_SIZE } from '../types/game';
+import type { GameState, Player, GameMessage, ClientInfo } from '../types/game';
 import SocketService from '../services/socket';
-import { createEmptyBoard, createInitialShips, generateRandomBoard, formatTimer, getBoardString } from '../utils/gameUtils';
+import { createEmptyBoard, createInitialShips, generateRandomBoard, getBoardString } from '../utils/gameUtils';
 import Grid from './Grid';
 import GameStatus from './GameStatus';
 import PlayerControls from './PlayerControls';
@@ -40,7 +39,7 @@ const Game: React.FC = () => {
       return;
     }
 
-    const socket = socketService.connect();
+  socketService.connect();
     socketService.setNickname(nickname.trim());
     showMessage('info', 'Setting nickname...');
   }, [nickname, socketService, showMessage]);
@@ -78,7 +77,7 @@ const Game: React.FC = () => {
   }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage]);
 
   useEffect(() => {
-    const socket = socketService.connect();
+  socketService.connect();
 
     // Connection events
     socketService.onConnect(() => {

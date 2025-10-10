@@ -1,9 +1,16 @@
 // src/services/socket.ts
 import { io, Socket } from 'socket.io-client';
 
-// Server configuration - predefined as required
-const SERVER_IP = 'localhost';
-const SERVER_PORT = 3001;
+// Server configuration
+// Prefer VITE_SOCKET_URL, else default to current page hostname on port 3001
+const resolveServerUrl = (): string => {
+  const envUrl = (import.meta as any)?.env?.VITE_SOCKET_URL as string | undefined;
+  if (envUrl) return envUrl;
+  const isBrowser = typeof window !== 'undefined' && !!window.location;
+  const protocol = isBrowser ? window.location.protocol : 'http:';
+  const host = isBrowser ? window.location.hostname : 'localhost';
+  return `${protocol}//${host}:3001`;
+};
 
 class SocketService {
   private socket: Socket | null = null;
@@ -23,9 +30,10 @@ class SocketService {
       return this.socket;
     }
 
-    this.socket = io(`http://${SERVER_IP}:${SERVER_PORT}`, {
+  // Use resolved server URL so devices on LAN can connect
+  this.socket = io(resolveServerUrl(), {
       transports: ['websocket'],
-      autoConnect: true,
+      withCredentials: false,
     });
 
     this.socket.on('connect', () => {
