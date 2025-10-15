@@ -5,9 +5,11 @@ interface GameStatusProps {
   gameState: GameState;
   message: GameMessage;
   myNickname: string;
+  turnTimer: number;
+  turnActive: boolean;
 }
 
-function GameStatus({ gameState, message, myNickname }: GameStatusProps) {
+function GameStatus({ gameState, message, myNickname, turnTimer, turnActive }: GameStatusProps) {
   const getOpponentNickname = () => {
     return gameState.players.find(p => p.nickname !== myNickname)?.nickname || 'Opponent';
   };
@@ -42,8 +44,10 @@ function GameStatus({ gameState, message, myNickname }: GameStatusProps) {
           
           {gameState.phase === 'playing' && (
             <div className="game-timer">
-              <span className="timer-label">⏱️ Time Left:</span>
-              <span className="timer-value">{formatTimer(gameState.timer)}</span>
+              <span className="timer-label">⏱️ Turn Timer:</span>
+              <span className={`timer-value${turnActive ? '' : ' timer-inactive'}`}>
+                {turnActive ? `${turnTimer}s` : '⏳ Skipped'}
+              </span>
             </div>
           )}
           
