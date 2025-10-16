@@ -1,16 +1,21 @@
 // src/components/Game.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import type { GameState, Player, GameMessage, ClientInfo } from '../types/game';
-import SocketService from '../services/socket';
-import { createEmptyBoard, createInitialShips, generateRandomBoard, getBoardString } from '../utils/gameUtils';
-import Grid from './Grid';
-import GameStatus from './GameStatus';
-import PlayerControls from './PlayerControls';
-import './Game.css';
+import React, { useState, useEffect, useCallback } from "react";
+import type { GameState, Player, GameMessage, ClientInfo } from "../types/game";
+import SocketService from "../services/socket";
+import {
+  createEmptyBoard,
+  createInitialShips,
+  getBoardString,
+} from "../utils/gameUtils";
+import Grid from "./Grid";
+import GameStatus from "./GameStatus";
+import PlayerControls from "./PlayerControls";
+import "./Game.css";
+import ShipPlacement from "./ShipPlacement";
 
 const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
-    phase: 'nickname',
+    phase: "nickname",
     players: [],
     currentPlayer: null,
     gameId: null,
@@ -22,70 +27,78 @@ const Game: React.FC = () => {
     isFirstPlayer: false,
   });
 
-  const [nickname, setNickname] = useState('');
-  const [message, setMessage] = useState<GameMessage>({ type: 'info', text: 'Enter your nickname to start' });
+  const [nickname, setNickname] = useState("");
+  const [message, setMessage] = useState<GameMessage>({
+    type: "info",
+    text: "Enter your nickname to start",
+  });
   const [connectedClients, setConnectedClients] = useState<ClientInfo[]>([]);
-  const [myPlayerId, setMyPlayerId] = useState<string>('');
+  const [myPlayerId, setMyPlayerId] = useState<string>("");
   const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
-  const [lastResult, setLastResult] = useState<'win' | 'loss' | 'timeout' | null>(null);
+  const [lastResult, setLastResult] = useState<
+    "win" | "loss" | "timeout" | null
+  >(null);
   const [turnTimer, setTurnTimer] = useState<number>(10); // 10 seconds per turn
   const [turnActive, setTurnActive] = useState<boolean>(false);
 
   const socketService = SocketService.getInstance();
 
-  const showMessage = useCallback((type: GameMessage['type'], text: string) => {
+  const showMessage = useCallback((type: GameMessage["type"], text: string) => {
     setMessage({ type, text });
   }, []);
 
   const setNicknameHandler = useCallback(() => {
     if (nickname.trim().length < 2) {
-      showMessage('error', 'Nickname must be at least 2 characters long');
+      showMessage("error", "Nickname must be at least 2 characters long");
       return;
     }
 
-  socketService.connect();
+    socketService.connect();
     socketService.setNickname(nickname.trim());
-    showMessage('info', 'Setting nickname...');
+    showMessage("info", "Setting nickname...");
   }, [nickname, socketService, showMessage]);
 
   const joinGameQueue = useCallback(() => {
     socketService.joinQueue();
-    showMessage('info', 'Looking for an opponent...');
-    setGameState(prev => ({ ...prev, phase: 'waiting' }));
+    showMessage("info", "Looking for an opponent...");
+    setGameState((prev) => ({ ...prev, phase: "waiting" }));
   }, [socketService, showMessage]);
-
-  const placeShipsRandomly = useCallback(() => {
-    const randomBoard = generateRandomBoard();
-    setGameState(prev => ({ 
-      ...prev, 
-      myBoard: randomBoard,
-    }));
-    showMessage('success', 'Ships placed randomly! Click Ready to continue.');
-  }, [showMessage]);
 
   const confirmShipPlacement = useCallback(() => {
     const boardString = getBoardString(gameState.myBoard);
     socketService.placeShips(boardString);
-    showMessage('info', 'Waiting for opponent...');
-    setGameState(prev => ({ ...prev, phase: 'waiting' }));
+    showMessage("info", "Waiting for opponent...");
+    setGameState((prev) => ({ ...prev, phase: "waiting" }));
   }, [gameState.myBoard, socketService, showMessage]);
 
-  const handleCellClick = useCallback((row: number, col: number, isMyGrid: boolean) => {
-    if (isMyGrid || !gameState.myTurn || gameState.phase !== 'playing') return;
+  const handleCellClick = useCallback(
+    (row: number, col: number, isMyGrid: boolean) => {
+      if (isMyGrid || !gameState.myTurn || gameState.phase !== "playing")
+        return;
 
-    const cell = gameState.opponentBoard[row][col];
-    if (cell === 'H' || cell === 'M') return; // Already fired at this position
+      const cell = gameState.opponentBoard[row][col];
+      if (cell === "H" || cell === "M") return; // Already fired at this position
 
-    socketService.fire(row, col);
-    showMessage('info', 'Firing...');
-    setTurnActive(false); // Prevent further firing until next turn
-  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage, turnActive]);
+      socketService.fire(row, col);
+      showMessage("info", "Firing...");
+      setTurnActive(false); // Prevent further firing until next turn
+    },
+    [
+      gameState.myTurn,
+      gameState.opponentBoard,
+      gameState.phase,
+      socketService,
+      showMessage,
+      turnActive,
+    ]
+  );
 
   // Helpers to compute current opponent and H2H wins
   const getPlayersPair = useCallback(() => {
-    if (!myPlayerId || gameState.players.length < 2) return { me: null as Player | null, opp: null as Player | null };
-    const me = gameState.players.find(p => p.id === myPlayerId) || null;
-    const opp = gameState.players.find(p => p.id !== myPlayerId) || null;
+    if (!myPlayerId || gameState.players.length < 2)
+      return { me: null as Player | null, opp: null as Player | null };
+    const me = gameState.players.find((p) => p.id === myPlayerId) || null;
+    const opp = gameState.players.find((p) => p.id !== myPlayerId) || null;
     return { me, opp };
   }, [myPlayerId, gameState.players]);
 
@@ -93,29 +106,27 @@ const Game: React.FC = () => {
     const { me, opp } = getPlayersPair();
     if (!me || !opp) return { myWins: 0, oppWins: 0 };
 
-    const meClient = connectedClients.find(c => c.id === me.id);
-    const oppClient = connectedClients.find(c => c.id === opp.id);
+    const meClient = connectedClients.find((c) => c.id === me.id);
+    const oppClient = connectedClients.find((c) => c.id === opp.id);
 
-    const myWins = (meClient?.headtoheadWins?.[opp.id])
-      ?? (me.headtoheadWins?.[opp.id])
-      ?? 0;
-    const oppWins = (oppClient?.headtoheadWins?.[me.id])
-      ?? (opp.headtoheadWins?.[me.id])
-      ?? 0;
+    const myWins =
+      meClient?.headtoheadWins?.[opp.id] ?? me.headtoheadWins?.[opp.id] ?? 0;
+    const oppWins =
+      oppClient?.headtoheadWins?.[me.id] ?? opp.headtoheadWins?.[me.id] ?? 0;
 
     return { myWins, oppWins };
   }, [connectedClients, getPlayersPair]);
 
   useEffect(() => {
-  socketService.connect();
+    socketService.connect();
 
     // Connection events
     socketService.onConnect(() => {
-      showMessage('success', 'Connected to server! Welcome to Battleship!');
+      showMessage("success", "Connected to server! Welcome to Battleship!");
     });
 
     socketService.onDisconnect((reason) => {
-      showMessage('error', `Disconnected from server: ${reason}`);
+      showMessage("error", `Disconnected from server: ${reason}`);
     });
 
     // Client info events
@@ -125,22 +136,22 @@ const Game: React.FC = () => {
 
     socketService.onNicknameSet((data) => {
       setMyPlayerId(data.clientId);
-      showMessage('success', `Welcome, ${data.nickname}!`);
-      setGameState(prev => ({ ...prev, phase: 'lobby' }));
+      showMessage("success", `Welcome, ${data.nickname}!`);
+      setGameState((prev) => ({ ...prev, phase: "lobby" }));
     });
 
     // Game flow events
     socketService.onWaiting(() => {
-      showMessage('info', 'Waiting for an opponent to join...');
+      showMessage("info", "Waiting for an opponent to join...");
     });
 
     socketService.onGameStart((data) => {
       const players: Player[] = data.players;
       const isFirstPlayer = data.firstPlayer === myPlayerId;
-      
-      setGameState(prev => ({
+
+      setGameState((prev) => ({
         ...prev,
-        phase: 'placing',
+        phase: "placing",
         players,
         gameId: data.gameId,
         currentPlayer: data.firstPlayer,
@@ -148,79 +159,104 @@ const Game: React.FC = () => {
         isFirstPlayer,
       }));
 
-      showMessage('info', `Game found! ${isFirstPlayer ? 'You go first.' : 'Opponent goes first.'} Place your ships!`);
+      showMessage(
+        "info",
+        `Game found! ${
+          isFirstPlayer ? "You go first." : "Opponent goes first."
+        } Place your ships!`
+      );
     });
 
     socketService.onOpponentReady(() => {
-      showMessage('info', 'Opponent is ready! Waiting for you...');
+      showMessage("info", "Opponent is ready! Waiting for you...");
     });
 
     socketService.onAllPlayersReady(() => {
-      setGameState(prev => ({ ...prev, phase: 'playing' }));
-      showMessage('success', 'Game started! May the best captain win!');
+      setGameState((prev) => ({ ...prev, phase: "playing" }));
+      showMessage("success", "Game started! May the best captain win!");
     });
 
     socketService.onYourTurn(() => {
-      setGameState(prev => ({ ...prev, myTurn: true }));
-      showMessage('success', 'Your turn! Click on opponent\'s grid to fire!');
+      setGameState((prev) => ({ ...prev, myTurn: true }));
+      showMessage("success", "Your turn! Click on opponent's grid to fire!");
     });
 
     socketService.onOpponentTurn(() => {
-      setGameState(prev => ({ ...prev, myTurn: false }));
-      showMessage('info', 'Opponent\'s turn...');
+      setGameState((prev) => ({ ...prev, myTurn: false }));
+      showMessage("info", "Opponent's turn...");
     });
 
     socketService.onFireResult((data) => {
       const { row, col, result, isOwnGrid } = data;
-      
-      setGameState(prev => ({
+
+      setGameState((prev) => ({
         ...prev,
-        myBoard: isOwnGrid ? prev.myBoard.map((r, rIdx) => 
-          r.map((c, cIdx) => (rIdx === row && cIdx === col) ? (result === 'hit' ? 'H' : 'M') : c)
-        ) : prev.myBoard,
-        opponentBoard: !isOwnGrid ? prev.opponentBoard.map((r, rIdx) => 
-          r.map((c, cIdx) => (rIdx === row && cIdx === col) ? (result === 'hit' ? 'H' : 'M') : c)
-        ) : prev.opponentBoard,
+        myBoard: isOwnGrid
+          ? prev.myBoard.map((r, rIdx) =>
+              r.map((c, cIdx) =>
+                rIdx === row && cIdx === col
+                  ? result === "hit"
+                    ? "H"
+                    : "M"
+                  : c
+              )
+            )
+          : prev.myBoard,
+        opponentBoard: !isOwnGrid
+          ? prev.opponentBoard.map((r, rIdx) =>
+              r.map((c, cIdx) =>
+                rIdx === row && cIdx === col
+                  ? result === "hit"
+                    ? "H"
+                    : "M"
+                  : c
+              )
+            )
+          : prev.opponentBoard,
       }));
 
       if (isOwnGrid) {
-        showMessage(result === 'hit' ? 'warning' : 'info', 
-          result === 'hit' ? 'Enemy hit your ship!' : 'Enemy missed!');
+        showMessage(
+          result === "hit" ? "warning" : "info",
+          result === "hit" ? "Enemy hit your ship!" : "Enemy missed!"
+        );
       } else {
-        showMessage(result === 'hit' ? 'success' : 'info', 
-          result === 'hit' ? 'Direct hit!' : 'Miss!');
+        showMessage(
+          result === "hit" ? "success" : "info",
+          result === "hit" ? "Direct hit!" : "Miss!"
+        );
       }
     });
 
     socketService.onGameOver((data) => {
-      setGameState(prev => ({ ...prev, phase: 'game-over', myTurn: false }));
-      const res = data.result as 'win' | 'loss' | 'timeout';
+      setGameState((prev) => ({ ...prev, phase: "game-over", myTurn: false }));
+      const res = data.result as "win" | "loss" | "timeout";
       setLastResult(res);
       setShowGameOverModal(true);
-      
-      if (data.result === 'win') {
-        showMessage('success', 'Congratulations! You won! 🎉');
-      } else if (data.result === 'loss') {
-        showMessage('error', 'You lost! Better luck next time!');
-      } else if (data.result === 'timeout') {
-        showMessage('warning', `Game timed out! ${data.winnerNickname} wins!`);
+
+      if (data.result === "win") {
+        showMessage("success", "Congratulations! You won! 🎉");
+      } else if (data.result === "loss") {
+        showMessage("error", "You lost! Better luck next time!");
+      } else if (data.result === "timeout") {
+        showMessage("warning", `Game timed out! ${data.winnerNickname} wins!`);
       }
     });
 
     socketService.onTimerUpdate((timer) => {
-      setGameState(prev => ({ ...prev, timer }));
+      setGameState((prev) => ({ ...prev, timer }));
     });
 
     socketService.onOpponentDisconnected(() => {
-      showMessage('warning', 'Opponent disconnected. You win by default!');
-      setGameState(prev => ({ ...prev, phase: 'game-over' }));
+      showMessage("warning", "Opponent disconnected. You win by default!");
+      setGameState((prev) => ({ ...prev, phase: "game-over" }));
     });
 
     socketService.onServerReset(() => {
-      showMessage('warning', 'Server was reset. Please refresh the page.');
+      showMessage("warning", "Server was reset. Please refresh the page.");
       // Reset to initial state
       setGameState({
-        phase: 'nickname',
+        phase: "nickname",
         players: [],
         currentPlayer: null,
         gameId: null,
@@ -231,8 +267,8 @@ const Game: React.FC = () => {
         ships: createInitialShips(),
         isFirstPlayer: false,
       });
-      setNickname('');
-      setMyPlayerId('');
+      setNickname("");
+      setMyPlayerId("");
     });
 
     return () => {
@@ -249,24 +285,31 @@ const Game: React.FC = () => {
           placeholder="Enter your nickname..."
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && setNicknameHandler()}
+          onKeyPress={(e) => e.key === "Enter" && setNicknameHandler()}
           maxLength={20}
           autoFocus
         />
-        <button onClick={setNicknameHandler} disabled={nickname.trim().length < 2}>
+        <button
+          onClick={setNicknameHandler}
+          disabled={nickname.trim().length < 2}
+        >
           Join Game
         </button>
       </div>
-      
+
       {connectedClients.length > 0 && (
         <div className="connected-players">
           <h3>Connected Players ({connectedClients.length})</h3>
           <div className="players-list">
-            {connectedClients.map(client => (
+            {connectedClients.map((client) => (
               <div key={client.id} className="player-info">
-                <span className="player-nickname">{client.nickname || 'Anonymous'}</span>
+                <span className="player-nickname">
+                  {client.nickname || "Anonymous"}
+                </span>
                 <span className="player-score">Score: {client.score}</span>
-                <span className={`player-status ${client.status}`}>{client.status}</span>
+                <span className={`player-status ${client.status}`}>
+                  {client.status}
+                </span>
               </div>
             ))}
           </div>
@@ -282,16 +325,20 @@ const Game: React.FC = () => {
       <button onClick={joinGameQueue} className="join-queue-btn">
         🎯 Find Opponent
       </button>
-      
+
       {connectedClients.length > 0 && (
         <div className="connected-players">
           <h3>Players Online ({connectedClients.length})</h3>
           <div className="players-list">
-            {connectedClients.map(client => (
+            {connectedClients.map((client) => (
               <div key={client.id} className="player-info">
-                <span className="player-nickname">{client.nickname || 'Anonymous'}</span>
+                <span className="player-nickname">
+                  {client.nickname || "Anonymous"}
+                </span>
                 <span className="player-score">Score: {client.score}</span>
-                <span className={`player-status ${client.status}`}>{client.status}</span>
+                <span className={`player-status ${client.status}`}>
+                  {client.status}
+                </span>
               </div>
             ))}
           </div>
@@ -302,14 +349,14 @@ const Game: React.FC = () => {
 
   const renderGamePhase = () => (
     <div className="game-phase">
-      <GameStatus 
+      <GameStatus
         gameState={gameState}
         message={message}
         myNickname={nickname}
       />
 
       {/* Head-to-Head banner during game */}
-      {gameState.players.length === 2 && (
+      {gameState.players.length === 2 &&
         (() => {
           const { me, opp } = getPlayersPair();
           if (!me || !opp) return null;
@@ -317,14 +364,17 @@ const Game: React.FC = () => {
           return (
             <div className="h2h-banner">
               <span className="h2h-title">Head-to-Head</span>
-              <span className="h2h-item my">You: <strong>{myWins}</strong></span>
+              <span className="h2h-item my">
+                You: <strong>{myWins}</strong>
+              </span>
               <span className="vs">vs</span>
-              <span className="h2h-item opp">{opp.nickname || 'Opponent'}: <strong>{oppWins}</strong></span>
+              <span className="h2h-item opp">
+                {opp.nickname || "Opponent"}: <strong>{oppWins}</strong>
+              </span>
             </div>
           );
-        })()
-      )}
-      
+        })()}
+
       <div className="game-boards">
         <div className="board-section">
           <h3>Your Fleet</h3>
@@ -335,33 +385,45 @@ const Game: React.FC = () => {
             interactive={false}
           />
         </div>
-        
+
         <div className="board-section">
           <h3>Enemy Waters</h3>
           <Grid
             board={gameState.opponentBoard}
             onCellClick={(row, col) => handleCellClick(row, col, false)}
             isMyGrid={false}
-            interactive={gameState.myTurn && gameState.phase === 'playing'}
+            interactive={gameState.myTurn && gameState.phase === "playing"}
           />
         </div>
       </div>
 
-      {gameState.phase === 'placing' && (
-        <PlayerControls
-          onPlaceRandomly={placeShipsRandomly}
-          onConfirmPlacement={confirmShipPlacement}
-          shipsPlaced={gameState.myBoard.flat().includes('S')}
-        />
+      {gameState.phase === "placing" && (
+        <>
+          <ShipPlacement
+            board={gameState.myBoard}
+            ships={gameState.ships}
+            onBoardChange={(newBoard) =>
+              setGameState((prev) => ({ ...prev, myBoard: newBoard }))
+            }
+            onShipsChange={(newShips) =>
+              setGameState((prev) => ({ ...prev, ships: newShips }))
+            }
+          />
+
+          <PlayerControls
+            onConfirmPlacement={confirmShipPlacement}
+            shipsPlaced={gameState.ships.every((s) => s.placed)}
+          />
+        </>
       )}
     </div>
   );
 
   const handleRematch = useCallback(() => {
     // Reset local boards and ships and rejoin queue
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
-      phase: 'waiting',
+      phase: "waiting",
       myTurn: false,
       timer: 300,
       myBoard: createEmptyBoard(),
@@ -369,14 +431,14 @@ const Game: React.FC = () => {
       ships: createInitialShips(),
     }));
     setShowGameOverModal(false);
-    showMessage('info', 'Searching for a rematch...');
+    showMessage("info", "Searching for a rematch...");
     socketService.joinQueue();
   }, [socketService, showMessage]);
 
   const handleReturnHome = useCallback(() => {
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
-      phase: 'lobby',
+      phase: "lobby",
       myTurn: false,
       timer: 300,
       myBoard: createEmptyBoard(),
@@ -384,45 +446,60 @@ const Game: React.FC = () => {
       ships: createInitialShips(),
     }));
     setShowGameOverModal(false);
-    showMessage('info', 'Returned to lobby.');
+    showMessage("info", "Returned to lobby.");
   }, [showMessage]);
 
   return (
     <div className="game-container">
-      {gameState.phase === 'nickname' && renderNicknamePhase()}
-      {gameState.phase === 'lobby' && renderLobbyPhase()}
-      {(gameState.phase === 'waiting' || gameState.phase === 'placing' || 
-        gameState.phase === 'playing' || gameState.phase === 'game-over') && renderGamePhase()}
+      {gameState.phase === "nickname" && renderNicknamePhase()}
+      {gameState.phase === "lobby" && renderLobbyPhase()}
+      {(gameState.phase === "waiting" ||
+        gameState.phase === "placing" ||
+        gameState.phase === "playing" ||
+        gameState.phase === "game-over") &&
+        renderGamePhase()}
 
       {/* Game Over Modal */}
-      {showGameOverModal && (() => {
-        const { me, opp } = getPlayersPair();
-        const { myWins, oppWins } = getHeadToHead();
-        const title = lastResult === 'win' ? 'You Won! 🎉' : lastResult === 'loss' ? 'You Lost' : 'Time Out';
-        return (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h2 className="modal-title">{title}</h2>
-              {me && opp && (
-                <div className="modal-h2h">
-                  <div className="h2h-row">
-                    <span className="me-name">You</span>
-                    <span className="score">{myWins}</span>
-                    <span className="vs">:</span>
-                    <span className="score">{oppWins}</span>
-                    <span className="opp-name">{opp.nickname || 'Opponent'}</span>
+      {showGameOverModal &&
+        (() => {
+          const { me, opp } = getPlayersPair();
+          const { myWins, oppWins } = getHeadToHead();
+          const title =
+            lastResult === "win"
+              ? "You Won! 🎉"
+              : lastResult === "loss"
+              ? "You Lost"
+              : "Time Out";
+          return (
+            <div className="modal-overlay">
+              <div className="modal">
+                <h2 className="modal-title">{title}</h2>
+                {me && opp && (
+                  <div className="modal-h2h">
+                    <div className="h2h-row">
+                      <span className="me-name">You</span>
+                      <span className="score">{myWins}</span>
+                      <span className="vs">:</span>
+                      <span className="score">{oppWins}</span>
+                      <span className="opp-name">
+                        {opp.nickname || "Opponent"}
+                      </span>
+                    </div>
+                    <div className="h2h-note">Head-to-head record</div>
                   </div>
-                  <div className="h2h-note">Head-to-head record</div>
+                )}
+                <div className="modal-actions">
+                  <button className="btn primary" onClick={handleRematch}>
+                    🔁 Rematch
+                  </button>
+                  <button className="btn" onClick={handleReturnHome}>
+                    🏠 Return Home
+                  </button>
                 </div>
-              )}
-              <div className="modal-actions">
-                <button className="btn primary" onClick={handleRematch}>🔁 Rematch</button>
-                <button className="btn" onClick={handleReturnHome}>🏠 Return Home</button>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 };
