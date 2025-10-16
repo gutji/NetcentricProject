@@ -26,8 +26,6 @@ const Game: React.FC = () => {
   const [message, setMessage] = useState<GameMessage>({ type: 'info', text: 'Enter your nickname to start' });
   const [connectedClients, setConnectedClients] = useState<ClientInfo[]>([]);
   const [myPlayerId, setMyPlayerId] = useState<string>('');
-  const [turnTimer, setTurnTimer] = useState<number>(10); // 10 seconds per turn
-  const [turnActive, setTurnActive] = useState<boolean>(false);
 
   const socketService = SocketService.getInstance();
 
@@ -68,44 +66,15 @@ const Game: React.FC = () => {
     setGameState(prev => ({ ...prev, phase: 'waiting' }));
   }, [gameState.myBoard, socketService, showMessage]);
 
-  useEffect(() => {
-    // Listen for per-turn timer updates
-    socketService.onTurnTimerUpdate((timer: number) => {
-      setTurnTimer(timer);
-      setTurnActive(timer > 0);
-    });
-
-    // Listen for turn skipped event
-    socketService.onTurnSkipped(() => {
-      setGameState(prev => ({ ...prev, myTurn: false }));
-      setTurnActive(false);
-      showMessage('warning', 'Turn skipped due to timeout!');
-    });
-
-    return () => {
-      socketService.removeListener('turnTimerUpdate');
-      socketService.removeListener('turnSkipped');
-    };
-  }, [socketService, showMessage]);
-
-  useEffect(() => {
-    // Reset timer when your turn starts
-    if (gameState.myTurn && gameState.phase === 'playing') {
-      setTurnTimer(10);
-      setTurnActive(true);
-    }
-  }, [gameState.myTurn, gameState.phase]);
-
   const handleCellClick = useCallback((row: number, col: number, isMyGrid: boolean) => {
-    if (isMyGrid || !gameState.myTurn || gameState.phase !== 'playing' || !turnActive) return;
+    if (isMyGrid || !gameState.myTurn || gameState.phase !== 'playing') return;
 
     const cell = gameState.opponentBoard[row][col];
     if (cell === 'H' || cell === 'M') return; // Already fired at this position
 
     socketService.fire(row, col);
     showMessage('info', 'Firing...');
-    setTurnActive(false); // Prevent further firing until next turn
-  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage, turnActive]);
+  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage]);
 
   useEffect(() => {
   socketService.connect();
@@ -304,8 +273,6 @@ const Game: React.FC = () => {
         gameState={gameState}
         message={message}
         myNickname={nickname}
-        turnTimer={turnTimer}
-        turnActive={turnActive}
       />
       
       <div className="game-boards">

@@ -148,38 +148,6 @@ function startGameTimer(gameId) {
     gameData.timer = timer;
 }
 
-function startTurnTimer(game, playerSocket) {
-  let timer = 10;
-  clearInterval(game.turnTimerInterval);
-
-  // Emit timer update every second
-  game.turnTimerInterval = setInterval(() => {
-    timer--;
-    playerSocket.emit('turnTimerUpdate', timer);
-
-    if (timer <= 0) {
-      clearInterval(game.turnTimerInterval);
-      // Skip turn if no action
-      playerSocket.emit('turnSkipped');
-      game.skipPlayerTurn(); // Implement this to switch turns in your game logic
-    }
-  }, 1000);
-
-  // Initial timer emit
-  playerSocket.emit('turnTimerUpdate', timer);
-}
-
-// When a player's turn starts
-function onPlayerTurn(game, playerSocket) {
-  startTurnTimer(game, playerSocket);
-  playerSocket.emit('yourTurn');
-}
-
-// When player fires, clear timer
-function onPlayerFire(game, playerSocket) {
-  clearInterval(game.turnTimerInterval);
-}
-
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
     gameState.clientCount++;
