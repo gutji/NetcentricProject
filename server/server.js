@@ -92,6 +92,7 @@ function updateClientStats() {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         })),
         activeGames: gameState.activeGames.size,
@@ -104,80 +105,58 @@ function updateClientStats() {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         }))
     });
 }
 
-function startGameTimer(gameId) {
+// Per-turn 10s timer. Resets every time the turn changes. If it hits 0, we auto-pass the turn.
+function startTurnTimer(gameId) {
     const gameData = gameState.activeGames.get(gameId);
     if (!gameData) return;
 
-    const timer = setInterval(() => {
-        gameData.gameTimer--;
-        io.to(gameId).emit('timerUpdate', gameData.gameTimer);
-        
-        if (gameData.gameTimer <= 0) {
-            clearInterval(timer);
-            // Handle game timeout - random winner
-            const randomWinner = getRandomPlayer(gameData.players);
-            const loser = gameData.players.find(p => p.id !== randomWinner.id);
-            
-            randomWinner.score += 10;
-            
-            io.to(gameId).emit('gameOver', {
-                result: 'timeout',
-                winner: randomWinner.id,
-                winnerNickname: randomWinner.nickname
-            });
-            
-            // Clean up game
-            gameData.players.forEach(player => {
-                player.status = 'lobby';
-                player.gameId = null;
-                player.playerIndex = null;
-                player.board = null;
-                player.isReady = false;
-            });
-            
-            gameState.activeGames.delete(gameId);
-            updateClientStats();
+    // Clear any existing timer
+    if (gameData.timer) {
+        clearInterval(gameData.timer);
+        gameData.timer = null;
+    }
+
+    // Initialize remaining seconds for this turn
+    gameData.gameTimer = 10; // reuse field to minimize client changes
+    io.to(gameId).emit('timerUpdate', gameData.gameTimer);
+
+    const interval = setInterval(() => {
+        // If game got cleaned up mid-interval
+        const gd = gameState.activeGames.get(gameId);
+        if (!gd) {
+            clearInterval(interval);
+            return;
+        }
+
+        gd.gameTimer -= 1;
+        io.to(gameId).emit('timerUpdate', gd.gameTimer);
+
+        if (gd.gameTimer <= 0) {
+            clearInterval(interval);
+
+            // Time's up for current player; auto-switch turns
+            const currentPlayerId = gd.currentTurn;
+            const nextPlayer = gd.players.find(p => p.id !== currentPlayerId);
+            const currentPlayer = gd.players.find(p => p.id === currentPlayerId);
+
+            if (currentPlayer && nextPlayer) {
+                gd.currentTurn = nextPlayer.id;
+                currentPlayer.socket.emit('opponentTurn');
+                nextPlayer.socket.emit('yourTurn');
+            }
+
+            // Start timer for the next player's turn
+            startTurnTimer(gameId);
         }
     }, 1000);
-    
-    gameData.timer = timer;
-}
 
-function startTurnTimer(game, playerSocket) {
-  let timer = 10;
-  clearInterval(game.turnTimerInterval);
-
-  // Emit timer update every second
-  game.turnTimerInterval = setInterval(() => {
-    timer--;
-    playerSocket.emit('turnTimerUpdate', timer);
-
-    if (timer <= 0) {
-      clearInterval(game.turnTimerInterval);
-      // Skip turn if no action
-      playerSocket.emit('turnSkipped');
-      game.skipPlayerTurn(); // Implement this to switch turns in your game logic
-    }
-  }, 1000);
-
-  // Initial timer emit
-  playerSocket.emit('turnTimerUpdate', timer);
-}
-
-// When a player's turn starts
-function onPlayerTurn(game, playerSocket) {
-  startTurnTimer(game, playerSocket);
-  playerSocket.emit('yourTurn');
-}
-
-// When player fires, clear timer
-function onPlayerFire(game, playerSocket) {
-  clearInterval(game.turnTimerInterval);
+    gameData.timer = interval;
 }
 
 io.on('connection', (socket) => {
@@ -190,6 +169,7 @@ io.on('connection', (socket) => {
         socket: socket,
         nickname: '',
         score: 0,
+        headtoheadWins: {},
         status: 'connected',
         gameId: null,
         playerIndex: null,
@@ -206,6 +186,7 @@ io.on('connection', (socket) => {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         }))
     });
@@ -242,7 +223,7 @@ io.on('connection', (socket) => {
                 id: gameId,
                 players: [firstPlayer, secondPlayer],
                 currentTurn: firstPlayer.id,
-                gameTimer: 300, // 5 minutes
+                gameTimer: 10, // 10 seconds per turn (reused field name)
                 startTime: Date.now(),
                 status: 'waiting_for_ships'
             };
@@ -269,8 +250,8 @@ io.on('connection', (socket) => {
             io.to(gameId).emit('gameStart', { 
                 gameId,
                 players: [
-                    { id: firstPlayer.id, nickname: firstPlayer.nickname, score: firstPlayer.score },
-                    { id: secondPlayer.id, nickname: secondPlayer.nickname, score: secondPlayer.score }
+                    { id: firstPlayer.id, nickname: firstPlayer.nickname, score: firstPlayer.score, headtoheadWins: firstPlayer.headtoheadWins },
+                    { id: secondPlayer.id, nickname: secondPlayer.nickname, score: secondPlayer.score, headtoheadWins: secondPlayer.headtoheadWins }
                 ],
                 firstPlayer: firstPlayer.id,
                 gameTimer: gameData.gameTimer
@@ -307,8 +288,8 @@ io.on('connection', (socket) => {
             gameData.status = 'active';
             console.log(`Game ${client.gameId} is now active`);
             
-            // Start the game timer
-            startGameTimer(client.gameId);
+            // Start the first turn timer
+            startTurnTimer(client.gameId);
             
             // Notify players game is starting
             io.to(client.gameId).emit('allPlayersReady');
@@ -356,7 +337,8 @@ io.on('connection', (socket) => {
 
         if (allShipsSunk) {
             // Game over - current player wins
-            client.score += 10;
+            client.score += 1;
+            client.headtoheadWins[opponent.id] = (client.headtoheadWins[opponent.id] || 0) + 1;
             
             // Clear the timer
             if (gameData.timer) {
@@ -384,6 +366,9 @@ io.on('connection', (socket) => {
             gameData.currentTurn = opponent.id;
             client.socket.emit('opponentTurn');
             opponent.socket.emit('yourTurn');
+
+            // Reset per-turn timer for the next player
+            startTurnTimer(client.gameId);
         }
     });
 
@@ -408,7 +393,8 @@ io.on('connection', (socket) => {
                 // Award points to remaining player
                 const opponent = gameData.players.find(p => p.id !== client.id);
                 if (opponent) {
-                    opponent.score += 5; // Points for opponent disconnect
+                    opponent.score += 1;
+                    opponent.headtoheadWins[client.id] = (opponent.headtoheadWins[client.id] || 0) + 1; // count as H2H win
                     opponent.status = 'lobby';
                     opponent.gameId = null;
                     opponent.playerIndex = null;

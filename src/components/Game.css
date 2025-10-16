@@ -249,6 +249,84 @@
   color: #ffd700;
 }
 
+/* Head-to-Head banner */
+.h2h-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.h2h-title {
+  color: #ffd700;
+  font-weight: bold;
+}
+.h2h-item.my { color: #28a745; }
+.h2h-item.opp { color: #dc3545; }
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: #0e2a52;
+  color: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+.modal-title {
+  margin-top: 0;
+  text-align: center;
+}
+.modal-h2h {
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 0;
+}
+.h2h-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.2em;
+}
+.h2h-note {
+  text-align: center;
+  color: #adb5bd;
+  font-size: 0.9em;
+  margin-top: 6px;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #6c757d;
+  color: #fff;
+}
+.btn.primary {
+  background: #007bff;
+}
+.btn:hover { opacity: 0.9; }
+
 .game-timer {
   display: flex;
   flex-direction: column;
