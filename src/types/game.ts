@@ -3,6 +3,11 @@ export interface Player {
   id: string;
   nickname: string;
   score: number;
+  headtoheadWins: headtoheadWins;
+}
+
+export interface headtoheadWins {
+  [opponentId: string]: number;
 }
 
 export interface GameState {
@@ -38,6 +43,7 @@ export interface ClientInfo {
   nickname: string;
   score: number;
   status: string;
+  headtoheadWins?: headtoheadWins;
 }
 
 export const GRID_SIZE = 10;

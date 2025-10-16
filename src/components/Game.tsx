@@ -26,6 +26,10 @@ const Game: React.FC = () => {
   const [message, setMessage] = useState<GameMessage>({ type: 'info', text: 'Enter your nickname to start' });
   const [connectedClients, setConnectedClients] = useState<ClientInfo[]>([]);
   const [myPlayerId, setMyPlayerId] = useState<string>('');
+  const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
+  const [lastResult, setLastResult] = useState<'win' | 'loss' | 'timeout' | null>(null);
+  const [turnTimer, setTurnTimer] = useState<number>(10); // 10 seconds per turn
+  const [turnActive, setTurnActive] = useState<boolean>(false);
 
   const socketService = SocketService.getInstance();
 
@@ -74,7 +78,33 @@ const Game: React.FC = () => {
 
     socketService.fire(row, col);
     showMessage('info', 'Firing...');
-  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage]);
+    setTurnActive(false); // Prevent further firing until next turn
+  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage, turnActive]);
+
+  // Helpers to compute current opponent and H2H wins
+  const getPlayersPair = useCallback(() => {
+    if (!myPlayerId || gameState.players.length < 2) return { me: null as Player | null, opp: null as Player | null };
+    const me = gameState.players.find(p => p.id === myPlayerId) || null;
+    const opp = gameState.players.find(p => p.id !== myPlayerId) || null;
+    return { me, opp };
+  }, [myPlayerId, gameState.players]);
+
+  const getHeadToHead = useCallback(() => {
+    const { me, opp } = getPlayersPair();
+    if (!me || !opp) return { myWins: 0, oppWins: 0 };
+
+    const meClient = connectedClients.find(c => c.id === me.id);
+    const oppClient = connectedClients.find(c => c.id === opp.id);
+
+    const myWins = (meClient?.headtoheadWins?.[opp.id])
+      ?? (me.headtoheadWins?.[opp.id])
+      ?? 0;
+    const oppWins = (oppClient?.headtoheadWins?.[me.id])
+      ?? (opp.headtoheadWins?.[me.id])
+      ?? 0;
+
+    return { myWins, oppWins };
+  }, [connectedClients, getPlayersPair]);
 
   useEffect(() => {
   socketService.connect();
@@ -164,6 +194,9 @@ const Game: React.FC = () => {
 
     socketService.onGameOver((data) => {
       setGameState(prev => ({ ...prev, phase: 'game-over', myTurn: false }));
+      const res = data.result as 'win' | 'loss' | 'timeout';
+      setLastResult(res);
+      setShowGameOverModal(true);
       
       if (data.result === 'win') {
         showMessage('success', 'Congratulations! You won! 🎉');
@@ -274,6 +307,23 @@ const Game: React.FC = () => {
         message={message}
         myNickname={nickname}
       />
+
+      {/* Head-to-Head banner during game */}
+      {gameState.players.length === 2 && (
+        (() => {
+          const { me, opp } = getPlayersPair();
+          if (!me || !opp) return null;
+          const { myWins, oppWins } = getHeadToHead();
+          return (
+            <div className="h2h-banner">
+              <span className="h2h-title">Head-to-Head</span>
+              <span className="h2h-item my">You: <strong>{myWins}</strong></span>
+              <span className="vs">vs</span>
+              <span className="h2h-item opp">{opp.nickname || 'Opponent'}: <strong>{oppWins}</strong></span>
+            </div>
+          );
+        })()
+      )}
       
       <div className="game-boards">
         <div className="board-section">
@@ -307,12 +357,72 @@ const Game: React.FC = () => {
     </div>
   );
 
+  const handleRematch = useCallback(() => {
+    // Reset local boards and ships and rejoin queue
+    setGameState(prev => ({
+      ...prev,
+      phase: 'waiting',
+      myTurn: false,
+      timer: 300,
+      myBoard: createEmptyBoard(),
+      opponentBoard: createEmptyBoard(),
+      ships: createInitialShips(),
+    }));
+    setShowGameOverModal(false);
+    showMessage('info', 'Searching for a rematch...');
+    socketService.joinQueue();
+  }, [socketService, showMessage]);
+
+  const handleReturnHome = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      phase: 'lobby',
+      myTurn: false,
+      timer: 300,
+      myBoard: createEmptyBoard(),
+      opponentBoard: createEmptyBoard(),
+      ships: createInitialShips(),
+    }));
+    setShowGameOverModal(false);
+    showMessage('info', 'Returned to lobby.');
+  }, [showMessage]);
+
   return (
     <div className="game-container">
       {gameState.phase === 'nickname' && renderNicknamePhase()}
       {gameState.phase === 'lobby' && renderLobbyPhase()}
       {(gameState.phase === 'waiting' || gameState.phase === 'placing' || 
         gameState.phase === 'playing' || gameState.phase === 'game-over') && renderGamePhase()}
+
+      {/* Game Over Modal */}
+      {showGameOverModal && (() => {
+        const { me, opp } = getPlayersPair();
+        const { myWins, oppWins } = getHeadToHead();
+        const title = lastResult === 'win' ? 'You Won! 🎉' : lastResult === 'loss' ? 'You Lost' : 'Time Out';
+        return (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h2 className="modal-title">{title}</h2>
+              {me && opp && (
+                <div className="modal-h2h">
+                  <div className="h2h-row">
+                    <span className="me-name">You</span>
+                    <span className="score">{myWins}</span>
+                    <span className="vs">:</span>
+                    <span className="score">{oppWins}</span>
+                    <span className="opp-name">{opp.nickname || 'Opponent'}</span>
+                  </div>
+                  <div className="h2h-note">Head-to-head record</div>
+                </div>
+              )}
+              <div className="modal-actions">
+                <button className="btn primary" onClick={handleRematch}>🔁 Rematch</button>
+                <button className="btn" onClick={handleReturnHome}>🏠 Return Home</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

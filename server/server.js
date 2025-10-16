@@ -92,6 +92,7 @@ function updateClientStats() {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         })),
         activeGames: gameState.activeGames.size,
@@ -104,6 +105,7 @@ function updateClientStats() {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         }))
     });
@@ -124,6 +126,9 @@ function startGameTimer(gameId) {
             const loser = gameData.players.find(p => p.id !== randomWinner.id);
             
             randomWinner.score += 10;
+            if (loser) {
+                randomWinner.headtoheadWins[loser.id] = (randomWinner.headtoheadWins[loser.id] || 0) + 1;
+            }
             
             io.to(gameId).emit('gameOver', {
                 result: 'timeout',
@@ -158,6 +163,7 @@ io.on('connection', (socket) => {
         socket: socket,
         nickname: '',
         score: 0,
+        headtoheadWins: {},
         status: 'connected',
         gameId: null,
         playerIndex: null,
@@ -174,6 +180,7 @@ io.on('connection', (socket) => {
             id: c.id,
             nickname: c.nickname,
             score: c.score,
+            headtoheadWins: c.headtoheadWins,
             status: c.status
         }))
     });
@@ -237,8 +244,8 @@ io.on('connection', (socket) => {
             io.to(gameId).emit('gameStart', { 
                 gameId,
                 players: [
-                    { id: firstPlayer.id, nickname: firstPlayer.nickname, score: firstPlayer.score },
-                    { id: secondPlayer.id, nickname: secondPlayer.nickname, score: secondPlayer.score }
+                    { id: firstPlayer.id, nickname: firstPlayer.nickname, score: firstPlayer.score, headtoheadWins: firstPlayer.headtoheadWins },
+                    { id: secondPlayer.id, nickname: secondPlayer.nickname, score: secondPlayer.score, headtoheadWins: secondPlayer.headtoheadWins }
                 ],
                 firstPlayer: firstPlayer.id,
                 gameTimer: gameData.gameTimer
@@ -324,7 +331,8 @@ io.on('connection', (socket) => {
 
         if (allShipsSunk) {
             // Game over - current player wins
-            client.score += 10;
+            client.score += 1;
+            client.headtoheadWins[opponent.id] = (client.headtoheadWins[opponent.id] || 0) + 1;
             
             // Clear the timer
             if (gameData.timer) {
@@ -376,7 +384,8 @@ io.on('connection', (socket) => {
                 // Award points to remaining player
                 const opponent = gameData.players.find(p => p.id !== client.id);
                 if (opponent) {
-                    opponent.score += 5; // Points for opponent disconnect
+                    opponent.score += 1;
+                    opponent.headtoheadWins[client.id] = (opponent.headtoheadWins[client.id] || 0) + 1; // count as H2H win
                     opponent.status = 'lobby';
                     opponent.gameId = null;
                     opponent.playerIndex = null;
