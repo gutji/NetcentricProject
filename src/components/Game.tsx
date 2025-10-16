@@ -15,7 +15,7 @@ const Game: React.FC = () => {
     currentPlayer: null,
     gameId: null,
     myTurn: false,
-    timer: 300,
+    timer: 10,
     myBoard: createEmptyBoard(),
     opponentBoard: createEmptyBoard(),
     ships: createInitialShips(),
@@ -28,8 +28,7 @@ const Game: React.FC = () => {
   const [myPlayerId, setMyPlayerId] = useState<string>('');
   const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
   const [lastResult, setLastResult] = useState<'win' | 'loss' | 'timeout' | null>(null);
-  const [turnTimer, setTurnTimer] = useState<number>(10); // 10 seconds per turn
-  const [turnActive, setTurnActive] = useState<boolean>(false);
+  // Per-turn timing is driven by the server. No local turn timer state needed.
 
   const socketService = SocketService.getInstance();
 
@@ -78,8 +77,7 @@ const Game: React.FC = () => {
 
     socketService.fire(row, col);
     showMessage('info', 'Firing...');
-    setTurnActive(false); // Prevent further firing until next turn
-  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage, turnActive]);
+  }, [gameState.myTurn, gameState.opponentBoard, gameState.phase, socketService, showMessage]);
 
   // Helpers to compute current opponent and H2H wins
   const getPlayersPair = useCallback(() => {
@@ -144,7 +142,7 @@ const Game: React.FC = () => {
         players,
         gameId: data.gameId,
         currentPlayer: data.firstPlayer,
-        timer: data.gameTimer,
+        timer: 10,
         isFirstPlayer,
       }));
 
@@ -225,7 +223,7 @@ const Game: React.FC = () => {
         currentPlayer: null,
         gameId: null,
         myTurn: false,
-        timer: 300,
+        timer: 10,
         myBoard: createEmptyBoard(),
         opponentBoard: createEmptyBoard(),
         ships: createInitialShips(),
@@ -363,7 +361,7 @@ const Game: React.FC = () => {
       ...prev,
       phase: 'waiting',
       myTurn: false,
-      timer: 300,
+      timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
       ships: createInitialShips(),
@@ -378,7 +376,7 @@ const Game: React.FC = () => {
       ...prev,
       phase: 'lobby',
       myTurn: false,
-      timer: 300,
+      timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
       ships: createInitialShips(),

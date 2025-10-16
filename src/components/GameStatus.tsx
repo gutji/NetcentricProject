@@ -42,7 +42,7 @@ function GameStatus({ gameState, message, myNickname }: GameStatusProps) {
           
           {gameState.phase === 'playing' && (
             <div className="game-timer">
-              <span className="timer-label">⏱️ Time Left:</span>
+              <span className="timer-label">⏱️ Turn Time Left:</span>
               <span className="timer-value">{formatTimer(gameState.timer)}</span>
             </div>
           )}
