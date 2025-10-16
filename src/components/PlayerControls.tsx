@@ -1,25 +1,20 @@
 interface PlayerControlsProps {
-  onPlaceRandomly: () => void;
   onConfirmPlacement: () => void;
   shipsPlaced: boolean;
 }
 
-function PlayerControls({ onPlaceRandomly, onConfirmPlacement, shipsPlaced }: PlayerControlsProps) {
+function PlayerControls({
+  onConfirmPlacement,
+  shipsPlaced,
+}: PlayerControlsProps) {
   return (
     <div className="placement-controls">
       <div className="ship-placement">
         <h3>🚢 Ship Placement</h3>
         <p>Place your fleet strategically to defend against enemy attacks!</p>
-        
+
         <div className="placement-buttons">
-          <button 
-            onClick={onPlaceRandomly}
-            className="place-random-btn"
-          >
-            🎲 Random Placement
-          </button>
-          
-          <button 
+          <button
             onClick={onConfirmPlacement}
             className="ready-btn"
             disabled={!shipsPlaced}
@@ -27,13 +22,18 @@ function PlayerControls({ onPlaceRandomly, onConfirmPlacement, shipsPlaced }: Pl
             ⚓ Ready for Battle!
           </button>
         </div>
-        
+
         {!shipsPlaced && (
-          <p className="hint">Click "Random Placement" to position your ships automatically.</p>
+          <p className="hint">
+            Click "Random Placement" to position your ships automatically.
+          </p>
         )}
-        
+
         {shipsPlaced && (
-          <p className="hint">Ships placed! Click "Ready for Battle" when you're satisfied with the placement.</p>
+          <p className="hint">
+            Ships placed! Click "Ready for Battle" when you're satisfied with
+            the placement.
+          </p>
         )}
       </div>
     </div>
