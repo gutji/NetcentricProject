@@ -10,6 +10,33 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build after UI updates",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build for fullscreen check",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Rebuild after fullscreen fixes",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

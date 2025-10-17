@@ -38,8 +38,7 @@ const Game: React.FC = () => {
   const [lastResult, setLastResult] = useState<
     "win" | "loss" | "timeout" | null
   >(null);
-  const [turnTimer, setTurnTimer] = useState<number>(10); // 10 seconds per turn
-  const [turnActive, setTurnActive] = useState<boolean>(false);
+  // Per-turn timer is managed by the server; no local timer state needed.
 
   const socketService = SocketService.getInstance();
 
@@ -81,7 +80,6 @@ const Game: React.FC = () => {
 
       socketService.fire(row, col);
       showMessage("info", "Firing...");
-      setTurnActive(false); // Prevent further firing until next turn
     },
     [
       gameState.myTurn,
@@ -89,7 +87,6 @@ const Game: React.FC = () => {
       gameState.phase,
       socketService,
       showMessage,
-      turnActive,
     ]
   );
 
