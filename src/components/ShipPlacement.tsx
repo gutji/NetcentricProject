@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { canPlaceShip, placeShip, removeShip } from "../utils/gameUtils";
+import { canPlaceShip, placeShip, removeShip, getShipAtPosition } from "../utils/gameUtils";
 import type { CellState, Ship } from "../types/game";
 import "./ShipPlacement.css";
 
@@ -41,6 +41,14 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
     setSelectedShip(ship);
   };
 
+  // Drag start from a placed cell on the board
+  const handleCellDragStart = (row: number, col: number) => {
+    const ship = getShipAtPosition(ships, row, col);
+    if (ship) {
+      setSelectedShip(ship);
+    }
+  };
+
   // Drop handler for board cells
   const handleDrop = (row: number, col: number) => {
     if (!selectedShip) return;
@@ -77,12 +85,36 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
     setSelectedShip(null);
   };
 
+  // Drop handler for inventory area (return ship to inventory)
+  const handleInventoryDrop = () => {
+    if (!selectedShip) return;
+
+    let newBoard = [...board];
+
+    // If ship is on the board, remove it
+    if (selectedShip.placed && selectedShip.position) {
+      newBoard = removeShip(newBoard, selectedShip);
+    }
+
+    const updatedShips = ships.map((s) =>
+      s.id === selectedShip.id
+        ? { ...s, placed: false, position: null }
+        : s
+    );
+
+    onBoardChange(newBoard);
+    onShipsChange(updatedShips);
+    setSelectedShip(null);
+  };
+
   return (
     <div className="ship-placement-container">
-      {" "}
-      <div className="available-ships">
-        {" "}
-        <h4>Your Ships</h4>{" "}
+      <div
+        className="available-ships"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleInventoryDrop}
+      >
+        <h4>Your Ships</h4>
         <div className="ships-list">
           {ships.map((ship) => (
             <div
@@ -108,7 +140,6 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
           ))}{" "}
         </div>{" "}
       </div>
-      ```
       <div className="placement-grid">
         {board.map((row, rIdx) => (
           <div key={rIdx} className="placement-row">
@@ -116,7 +147,9 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
               <div
                 key={cIdx}
                 className={`placement-cell ${cell === "S" ? "ship-cell" : ""}`}
+                draggable={cell === "S"}
                 onDragOver={(e) => e.preventDefault()}
+                onDragStart={() => handleCellDragStart(rIdx, cIdx)}
                 onDrop={() => handleDrop(rIdx, cIdx)}
               />
             ))}
