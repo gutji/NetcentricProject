@@ -67,8 +67,8 @@ class SocketService {
     this.socket?.emit('setNickname', nickname);
   }
 
-  joinQueue(): void {
-    this.socket?.emit('joinQueue');
+  joinQueue(mode: 'classic' | 'blitz' = 'classic'): void {
+    this.socket?.emit('joinQueue', { mode });
   }
 
   placeShips(board: string[][]): void {

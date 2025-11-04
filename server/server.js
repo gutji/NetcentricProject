@@ -39,7 +39,7 @@ app.use(express.json());
 // Game state
 let gameState = {
     connectedClients: new Map(),
-    waitingPlayers: [],
+    waitingPlayers: { classic: [], blitz: [] },
     activeGames: new Map(),
     clientCount: 0
 };
@@ -50,11 +50,34 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/stats', (req, res) => {
+    const games = Array.from(gameState.activeGames.values()).map(g => ({
+        id: g.id,
+        mode: g.mode || 'classic',
+        status: g.status,
+        currentTurn: g.currentTurn,
+        gameTimer: g.gameTimer,
+        players: g.players.map(p => ({ id: p.id, nickname: p.nickname }))
+    }));
+
+    const connectedClients = Array.from(gameState.connectedClients.values()).map(c => {
+        const gm = c.gameId ? gameState.activeGames.get(c.gameId) : null;
+        const mode = gm?.mode || c.queueMode || null;
+        return {
+            id: c.id,
+            nickname: c.nickname,
+            score: c.score,
+            headtoheadWins: c.headtoheadWins,
+            status: c.status,
+            mode
+        };
+    });
+
     res.json({
         clientCount: gameState.clientCount,
-        connectedClients: Array.from(gameState.connectedClients.values()),
+        connectedClients,
         activeGames: gameState.activeGames.size,
-        waitingPlayers: gameState.waitingPlayers.length
+        waitingPlayers: (gameState.waitingPlayers.classic.length + gameState.waitingPlayers.blitz.length),
+        games
     });
 });
 
@@ -67,7 +90,7 @@ app.post('/api/reset', (req, res) => {
     });
     
     gameState.connectedClients.clear();
-    gameState.waitingPlayers = [];
+    gameState.waitingPlayers = { classic: [], blitz: [] };
     gameState.activeGames.clear();
     gameState.clientCount = 0;
     
@@ -86,17 +109,32 @@ function getRandomPlayer(players) {
 
 function updateClientStats() {
     // Broadcast updated stats to admin interface
+    const games = Array.from(gameState.activeGames.values()).map(g => ({
+        id: g.id,
+        mode: g.mode || 'classic',
+        status: g.status,
+        currentTurn: g.currentTurn,
+        gameTimer: g.gameTimer,
+        players: g.players.map(p => ({ id: p.id, nickname: p.nickname }))
+    }));
+
     const payload = {
         clientCount: gameState.clientCount,
-        connectedClients: Array.from(gameState.connectedClients.values()).map(c => ({
-            id: c.id,
-            nickname: c.nickname,
-            score: c.score,
-            headtoheadWins: c.headtoheadWins,
-            status: c.status
-        })),
+        connectedClients: Array.from(gameState.connectedClients.values()).map(c => {
+            const gm = c.gameId ? gameState.activeGames.get(c.gameId) : null;
+            const mode = gm?.mode || c.queueMode || null;
+            return {
+                id: c.id,
+                nickname: c.nickname,
+                score: c.score,
+                headtoheadWins: c.headtoheadWins,
+                status: c.status,
+                mode
+            };
+        }),
         activeGames: gameState.activeGames.size,
-        waitingPlayers: gameState.waitingPlayers.length
+        waitingPlayers: (gameState.waitingPlayers.classic.length + gameState.waitingPlayers.blitz.length),
+        games
     };
 
     // Emit only to admin namespace so admin panels receive updates
@@ -118,17 +156,32 @@ function updateClientStats() {
 io.of('/admin').on('connection', (socket) => {
     console.log(`Admin connected: ${socket.id}`);
     // Optionally push initial stats immediately
+    const initGames = Array.from(gameState.activeGames.values()).map(g => ({
+        id: g.id,
+        mode: g.mode || 'classic',
+        status: g.status,
+        currentTurn: g.currentTurn,
+        gameTimer: g.gameTimer,
+        players: g.players.map(p => ({ id: p.id, nickname: p.nickname }))
+    }));
+
     socket.emit('statsUpdate', {
         clientCount: gameState.clientCount,
-        connectedClients: Array.from(gameState.connectedClients.values()).map(c => ({
-            id: c.id,
-            nickname: c.nickname,
-            score: c.score,
-            headtoheadWins: c.headtoheadWins,
-            status: c.status
-        })),
+        connectedClients: Array.from(gameState.connectedClients.values()).map(c => {
+            const gm = c.gameId ? gameState.activeGames.get(c.gameId) : null;
+            const mode = gm?.mode || c.queueMode || null;
+            return {
+                id: c.id,
+                nickname: c.nickname,
+                score: c.score,
+                headtoheadWins: c.headtoheadWins,
+                status: c.status,
+                mode
+            };
+        }),
         activeGames: gameState.activeGames.size,
-        waitingPlayers: gameState.waitingPlayers.length
+        waitingPlayers: (gameState.waitingPlayers.classic.length + gameState.waitingPlayers.blitz.length),
+        games: initGames
     });
 
     socket.on('disconnect', () => {
@@ -201,7 +254,8 @@ io.on('connection', (socket) => {
         board: null,
         isReady: false,
         lastOpponentId: null,
-        lastWinnerId: null
+        lastWinnerId: null,
+        queueMode: null
     };
     
     gameState.connectedClients.set(socket.id, clientData);
@@ -231,13 +285,17 @@ io.on('connection', (socket) => {
     });
 
     // Handle joining game queue
-    socket.on('joinQueue', () => {
+    socket.on('joinQueue', (payload) => {
         const client = gameState.connectedClients.get(socket.id);
         if (!client || !client.nickname) return;
 
-        if (gameState.waitingPlayers.length > 0) {
-            // Match with waiting player
-            const waitingPlayer = gameState.waitingPlayers.shift();
+        const mode = (payload && (payload.mode === 'blitz' || payload.mode === 'classic')) ? payload.mode : 'classic';
+        client.queueMode = mode;
+
+        const queue = gameState.waitingPlayers[mode];
+        if (queue.length > 0) {
+            // Match with waiting player of the same mode
+            const waitingPlayer = queue.shift();
             const gameId = generateGameId();
             
             // Decide who goes first (prefer last winner if these two just played)
@@ -265,7 +323,8 @@ io.on('connection', (socket) => {
                 currentTurn: firstPlayer.id,
                 gameTimer: 10, // 10 seconds per turn (reused field name)
                 startTime: Date.now(),
-                status: 'waiting_for_ships'
+                status: 'waiting_for_ships',
+                mode
             };
             
             gameState.activeGames.set(gameId, gameData);
@@ -289,7 +348,7 @@ io.on('connection', (socket) => {
             secondPlayer.playerIndex = 1;
             secondPlayer.status = 'in_game';
 
-            console.log(`Game ${gameId} started between ${firstPlayer.nickname} and ${secondPlayer.nickname}`);
+            console.log(`Game ${gameId} (${mode}) started between ${firstPlayer.nickname} and ${secondPlayer.nickname}`);
             console.log(`${firstPlayer.nickname} goes first`);
 
             // Notify both players
@@ -300,16 +359,17 @@ io.on('connection', (socket) => {
                     { id: secondPlayer.id, nickname: secondPlayer.nickname, score: secondPlayer.score, headtoheadWins: secondPlayer.headtoheadWins }
                 ],
                 firstPlayer: firstPlayer.id,
-                gameTimer: gameData.gameTimer
+                gameTimer: gameData.gameTimer,
+                mode
             });
 
             updateClientStats();
         } else {
             // Add to waiting queue
-            gameState.waitingPlayers.push(client);
+            queue.push(client);
             client.status = 'waiting';
             socket.emit('waiting');
-            console.log(`${client.nickname} is waiting for an opponent`);
+            console.log(`${client.nickname} is waiting for an opponent in ${mode} mode`);
             updateClientStats();
         }
     });
@@ -460,8 +520,9 @@ io.on('connection', (socket) => {
             }
         }
         
-        // Remove from waiting players if present
-        gameState.waitingPlayers = gameState.waitingPlayers.filter(p => p.id !== socket.id);
+    // Remove from waiting players if present (both queues, just in case)
+    gameState.waitingPlayers.classic = gameState.waitingPlayers.classic.filter(p => p.id !== socket.id);
+    gameState.waitingPlayers.blitz = gameState.waitingPlayers.blitz.filter(p => p.id !== socket.id);
         
         // Remove from connected clients
         gameState.connectedClients.delete(socket.id);
