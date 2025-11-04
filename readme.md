@@ -1,23 +1,27 @@
-# React + TypeScript + Vite
+# 🚢 Battleship Game - React & Node.js
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time multiplayer Battleship game built with React, TypeScript, Node.js, Express, and Socket.IO. This implementation includes all the features specified in the requirements.
 
-Currently, two official plugins are available:
+## ✨ Features Implemented
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Client Features
+- ✅ **Nickname Entry**: Players can enter a nickname when the game starts
+- ✅ **Welcome Message**: Welcome message appears on game start
+- ✅ **Player Info Display**: Nickname and score are displayed
+- ✅ **Ship Placement UI**: Grid interface with automatic ship placement
+- ✅ **Hidden Ship Positions**: Players cannot see each other's ship positions
+- ✅ **Game Timer**: Countdown timer (5 minutes per game)
+- ✅ **Hit/Miss Indicators**: Visual feedback for attack results
+- ✅ **Score System**: Points awarded when ships are destroyed
+- ✅ **Connected Clients Info**: View other connected players
+- ✅ **Predefined Server Connection**: Server IP and port are hardcoded
 
-# React Battleship Game
-
-A real-time multiplayer Battleship game built with React, TypeScript, Vite, and Socket.IO.
-
-## Features
-
-- **Real-time multiplayer gameplay** using Socket.IO
-- **Modern React architecture** with TypeScript
-- **Component-based design** for maintainable code
-- **Responsive UI** that works on desktop and mobile
-- **Fast development** with Vite hot module replacement
+### Server Features
+- ✅ **Admin UI**: Server interface showing concurrent clients
+- ✅ **Reset Functionality**: Button to reset all game state and scores
+- ✅ **Random First Player**: Server randomly selects who goes first
+- ✅ **Client Management**: Track and display connected clients
+- ✅ **Real-time Updates**: Live statistics and game state
 
 ## Architecture
 

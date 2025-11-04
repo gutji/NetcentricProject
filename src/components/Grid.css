@@ -1,40 +1,190 @@
+/* Enhanced Grid Styles */
+
 .grid {
   display: grid;
-  grid-template-columns: repeat(10, 35px);
-  grid-template-rows: repeat(10, 35px);
-  border: 2px solid #0056b3;
-  gap: 0;
+  grid-template-columns: repeat(10, 40px);
+  grid-template-rows: repeat(10, 40px);
+  gap: 1px;
+  border: 3px solid #0056b3;
+  border-radius: 8px;
+  background: #0056b3;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
 }
 
 .cell {
-  width: 35px;
-  height: 35px;
-  border: 1px solid #add8e6;
-  background-color: #e0f7fa;
-  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  background-color: #e6f3ff;
+  border: 1px solid #b3d9ff;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: default;
 }
 
-/* Cell States */
+.cell:hover {
+  transform: scale(1.05);
+}
+
+/* Ship cell (player's own ships) */
 .cell.ship {
-  background-color: #708090; /* Slate Gray */
+  background-color: #495057;
+  background-image: linear-gradient(45deg, #6c757d 25%, transparent 25%),
+                    linear-gradient(-45deg, #6c757d 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #6c757d 75%),
+                    linear-gradient(-45deg, transparent 75%, #6c757d 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  border: 1px solid #343a40;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Hit cell */
 .cell.hit {
-  background-color: #ff4136; /* Red */
+  background-color: #dc3545;
+  background-image: radial-gradient(circle, #ff6b6b 30%, #dc3545 70%);
+  border: 1px solid #c82333;
+  box-shadow: 0 0 8px rgba(220, 53, 69, 0.6), inset 0 0 4px rgba(0, 0, 0, 0.3);
+  animation: hit-flash 0.5s ease-out;
 }
 
+.cell.hit::after {
+  content: '💥';
+  font-size: 20px;
+  position: absolute;
+  animation: explosion 0.6s ease-out;
+}
+
+/* Miss cell */
 .cell.miss {
-  background-color: #ffffff; /* White */
+  background-color: #17a2b8;
+  background-image: radial-gradient(circle, #5bc0de 30%, #17a2b8 70%);
+  border: 1px solid #138496;
+  box-shadow: 0 0 4px rgba(23, 162, 184, 0.4);
+  animation: miss-splash 0.4s ease-out;
+}
+
+.cell.miss::after {
+  content: '💧';
+  font-size: 16px;
+  position: absolute;
+  animation: splash 0.5s ease-out;
+}
+
+/* Clickable cells (opponent grid) */
+.cell.clickable {
+  cursor: crosshair;
+  background-color: #cce7ff;
 }
 
 .cell.clickable:hover {
-  background-color: #b0e0e6; /* Powder Blue */
-  cursor: pointer;
+  background-color: #99d6ff;
+  border-color: #0056b3;
+  box-shadow: 0 0 8px rgba(0, 86, 179, 0.4);
+  transform: scale(1.1);
 }
 
-.cell.clickable {
-  cursor: pointer;
+/* Animations */
+@keyframes hit-flash {
+  0% { 
+    background-color: #fff;
+    transform: scale(1.2);
+  }
+  50% { 
+    background-color: #ff4444;
+    transform: scale(1.1);
+  }
+  100% { 
+    background-color: #dc3545;
+    transform: scale(1);
+  }
+}
+
+@keyframes explosion {
+  0% { 
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.5) rotate(180deg);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1) rotate(360deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes miss-splash {
+  0% { 
+    background-color: #e6f3ff;
+    transform: scale(1);
+  }
+  50% { 
+    background-color: #5bc0de;
+    transform: scale(1.05);
+  }
+  100% { 
+    background-color: #17a2b8;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash {
+  0% { 
+    transform: scale(0) translateY(0);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.2) translateY(-5px);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1) translateY(0);
+    opacity: 0.7;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(10, 32px);
+    grid-template-rows: repeat(10, 32px);
+  }
+  
+  .cell {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .cell.hit::after {
+    font-size: 16px;
+  }
+  
+  .cell.miss::after {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(10, 28px);
+    grid-template-rows: repeat(10, 28px);
+  }
+  
+  .cell {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .cell.hit::after {
+    font-size: 14px;
+  }
+  
+  .cell.miss::after {
+    font-size: 10px;
+  }
 }

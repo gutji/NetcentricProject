@@ -1,20 +1,18 @@
+import type { CellState } from '../types/game';
 import './Grid.css'
 
-type CellState = 'S' | 'W' | 'H' | 'M'
-type GameBoard = CellState[][]
-
 interface GridProps {
-  board: GameBoard
-  isPlayerGrid: boolean
-  onCellClick: (row: number, col: number) => void
-  clickable?: boolean
+  board: CellState[][];
+  onCellClick: (row: number, col: number) => void;
+  isMyGrid: boolean;
+  interactive?: boolean;
 }
 
-function Grid({ board, isPlayerGrid, onCellClick, clickable = false }: GridProps) {
+function Grid({ board, onCellClick, isMyGrid, interactive = false }: GridProps) {
   const getCellClass = (cellState: CellState) => {
     let className = 'cell'
     
-    if (isPlayerGrid && cellState === 'S') {
+    if (isMyGrid && cellState === 'S') {
       className += ' ship'
     }
     
@@ -24,7 +22,7 @@ function Grid({ board, isPlayerGrid, onCellClick, clickable = false }: GridProps
       className += ' miss'
     }
     
-    if (clickable && !isPlayerGrid && cellState !== 'H' && cellState !== 'M') {
+    if (interactive && !isMyGrid && cellState !== 'H' && cellState !== 'M') {
       className += ' clickable'
     }
     
@@ -32,7 +30,7 @@ function Grid({ board, isPlayerGrid, onCellClick, clickable = false }: GridProps
   }
 
   const handleCellClick = (row: number, col: number) => {
-    if (clickable && !isPlayerGrid) {
+    if (interactive && !isMyGrid) {
       onCellClick(row, col)
     }
   }
