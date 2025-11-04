@@ -210,7 +210,8 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        // Connect to admin namespace to avoid being counted as a game client
+        const socket = io('/admin');
         const serverStartTime = Date.now();
         
         // Update uptime every second

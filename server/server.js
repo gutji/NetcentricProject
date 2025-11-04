@@ -86,7 +86,7 @@ function getRandomPlayer(players) {
 
 function updateClientStats() {
     // Broadcast updated stats to admin interface
-    io.emit('statsUpdate', {
+    const payload = {
         clientCount: gameState.clientCount,
         connectedClients: Array.from(gameState.connectedClients.values()).map(c => ({
             id: c.id,
@@ -97,7 +97,10 @@ function updateClientStats() {
         })),
         activeGames: gameState.activeGames.size,
         waitingPlayers: gameState.waitingPlayers.length
-    });
+    };
+
+    // Emit only to admin namespace so admin panels receive updates
+    io.of('/admin').emit('statsUpdate', payload);
 
     // Also broadcast client list to all game clients so UIs update
     io.emit('clientsInfo', {
@@ -110,6 +113,28 @@ function updateClientStats() {
         }))
     });
 }
+
+// Admin namespace: used by admin UI so it's not counted as a game client
+io.of('/admin').on('connection', (socket) => {
+    console.log(`Admin connected: ${socket.id}`);
+    // Optionally push initial stats immediately
+    socket.emit('statsUpdate', {
+        clientCount: gameState.clientCount,
+        connectedClients: Array.from(gameState.connectedClients.values()).map(c => ({
+            id: c.id,
+            nickname: c.nickname,
+            score: c.score,
+            headtoheadWins: c.headtoheadWins,
+            status: c.status
+        })),
+        activeGames: gameState.activeGames.size,
+        waitingPlayers: gameState.waitingPlayers.length
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`Admin disconnected: ${socket.id}`);
+    });
+});
 
 // Per-turn 10s timer. Resets every time the turn changes. If it hits 0, we auto-pass the turn.
 function startTurnTimer(gameId) {
