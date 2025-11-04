@@ -13,9 +13,7 @@ import PlayerControls from "./PlayerControls";
 import "./Game.css";
 import ShipPlacement from "./ShipPlacement";
 
-type GameProps = { mode?: 'classic' | 'blitz'; onInMatchChange?: (inMatch: boolean) => void };
-
-const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
+const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     phase: "nickname",
     players: [],
@@ -60,10 +58,10 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
   }, [nickname, socketService, showMessage]);
 
   const joinGameQueue = useCallback(() => {
-    socketService.joinQueue(mode);
+    socketService.joinQueue();
     showMessage("info", "Looking for an opponent...");
     setGameState((prev) => ({ ...prev, phase: "waiting" }));
-  }, [socketService, showMessage, mode]);
+  }, [socketService, showMessage]);
 
   const confirmShipPlacement = useCallback(() => {
     const boardString = getBoardString(gameState.myBoard);
@@ -115,12 +113,6 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
 
     return { myWins, oppWins };
   }, [connectedClients, getPlayersPair]);
-
-  useEffect(() => {
-    // Inform parent whether we're currently in a match (placing or playing)
-    const inMatch = gameState.phase === 'placing' || gameState.phase === 'playing';
-    onInMatchChange && onInMatchChange(inMatch);
-  }, [gameState.phase, onInMatchChange]);
 
   useEffect(() => {
     socketService.connect();
@@ -279,7 +271,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     return () => {
       socketService.removeAllListeners();
     };
-  }, [myPlayerId, showMessage, socketService]);
+  }, [myPlayerId, showMessage]);
 
   const renderNicknamePhase = () => (
     <div className="nickname-phase">
@@ -437,8 +429,8 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     }));
     setShowGameOverModal(false);
     showMessage("info", "Searching for a rematch...");
-    socketService.joinQueue(mode);
-  }, [socketService, showMessage, mode]);
+    socketService.joinQueue();
+  }, [socketService, showMessage]);
 
   const handleReturnHome = useCallback(() => {
     setGameState((prev) => ({
