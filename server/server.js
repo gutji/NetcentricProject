@@ -174,7 +174,9 @@ io.on('connection', (socket) => {
         gameId: null,
         playerIndex: null,
         board: null,
-        isReady: false
+        isReady: false,
+        lastOpponentId: null,
+        lastWinnerId: null
     };
     
     gameState.connectedClients.set(socket.id, clientData);
@@ -213,9 +215,22 @@ io.on('connection', (socket) => {
             const waitingPlayer = gameState.waitingPlayers.shift();
             const gameId = generateGameId();
             
-            // Randomly decide who goes first
+            // Decide who goes first (prefer last winner if these two just played)
             const players = [client, waitingPlayer];
-            const firstPlayer = getRandomPlayer(players);
+            let firstPlayer;
+            if (
+                client.lastOpponentId === waitingPlayer.id &&
+                waitingPlayer.lastOpponentId === client.id
+            ) {
+                
+                const winnerId = client.lastWinnerId || waitingPlayer.lastWinnerId;
+                if (winnerId === client.id) firstPlayer = client;
+                else if (winnerId === waitingPlayer.id) firstPlayer = waitingPlayer;
+                console.log("Because this player won they start first: ", waitingPlayer.nickname);
+            }
+            if (!firstPlayer) {
+                firstPlayer = getRandomPlayer(players);
+            }
             const secondPlayer = players.find(p => p.id !== firstPlayer.id);
             
             // Setup game
@@ -229,6 +244,12 @@ io.on('connection', (socket) => {
             };
             
             gameState.activeGames.set(gameId, gameData);
+
+            // Clear rematch hints so they apply only once
+            client.lastOpponentId = null;
+            client.lastWinnerId = null;
+            waitingPlayer.lastOpponentId = null;
+            waitingPlayer.lastWinnerId = null;
             
             // Join both players to game room
             socket.join(gameId);
@@ -339,6 +360,11 @@ io.on('connection', (socket) => {
             // Game over - current player wins
             client.score += 1;
             client.headtoheadWins[opponent.id] = (client.headtoheadWins[opponent.id] || 0) + 1;
+            // Remember last opponent and winner for rematch
+            client.lastOpponentId = opponent.id;
+            opponent.lastOpponentId = client.id;
+            client.lastWinnerId = client.id;
+            opponent.lastWinnerId = client.id;
             
             // Clear the timer
             if (gameData.timer) {
@@ -395,6 +421,9 @@ io.on('connection', (socket) => {
                 if (opponent) {
                     opponent.score += 1;
                     opponent.headtoheadWins[client.id] = (opponent.headtoheadWins[client.id] || 0) + 1; // count as H2H win
+                    // Record last matchup and winner for rematch preference
+                    opponent.lastOpponentId = client.id;
+                    opponent.lastWinnerId = opponent.id;
                     opponent.status = 'lobby';
                     opponent.gameId = null;
                     opponent.playerIndex = null;
