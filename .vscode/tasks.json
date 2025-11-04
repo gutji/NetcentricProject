@@ -37,6 +37,15 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build after ship graphics",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
