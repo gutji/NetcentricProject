@@ -40,6 +40,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
   const [lastResult, setLastResult] = useState<
     "win" | "loss" | "timeout" | null
   >(null);
+  const [resumeReadyIds, setResumeReadyIds] = useState<string[]>([]);
   // Per-turn timer is managed by the server; no local timer state needed.
 
   const socketService = SocketService.getInstance();
@@ -252,6 +253,24 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       setGameState((prev) => ({ ...prev, timer }));
     });
 
+    socketService.onGamePaused(({ by }) => {
+      setGameState((prev) => ({ ...prev, paused: true }));
+      const who = by === myPlayerId ? 'You paused the game.' : 'Opponent paused the game.';
+      showMessage('warning', `${who} Game is paused.`);
+      setResumeReadyIds([]);
+    });
+
+    socketService.onGameResumed(({ by }) => {
+      setGameState((prev) => ({ ...prev, paused: false }));
+      const who = by === myPlayerId ? 'You resumed the game.' : 'Opponent resumed the game.';
+      showMessage('success', `${who}`);
+      setResumeReadyIds([]);
+    });
+
+    socketService.onResumeVoteUpdate(({ resumeReadyIds }) => {
+      setResumeReadyIds(resumeReadyIds || []);
+    });
+
     socketService.onOpponentDisconnected(() => {
       showMessage("warning", "Opponent disconnected. You win by default!");
       setGameState((prev) => ({ ...prev, phase: "game-over" }));
@@ -358,6 +377,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
         gameState={gameState}
         message={message}
         myNickname={nickname}
+        onPause={() => socketService.pauseGame()}
       />
 
       {/* Head-to-Head banner during game */}
@@ -434,6 +454,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
       ships: createInitialShips(),
+      paused: false,
     }));
     setShowGameOverModal(false);
     showMessage("info", "Searching for a rematch...");
@@ -505,6 +526,38 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
             </div>
           );
         })()}
+
+      {/* Pause Modal */}
+      {gameState.phase === 'playing' && gameState.paused && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2 className="modal-title">Game Paused</h2>
+            <p className="mb-3">Both players must press Resume to continue.</p>
+            <div className="mb-3 text-center">
+              <strong>Resume confirmations:</strong> {resumeReadyIds.length}/2
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn primary"
+                onClick={() => socketService.resumeGame()}
+                disabled={resumeReadyIds.includes(myPlayerId)}
+              >
+                {resumeReadyIds.includes(myPlayerId) ? 'Waiting for opponent…' : '▶️ Resume'}
+              </button>
+              <button
+                className="btn danger"
+                onClick={() => {
+                  if (confirm('Are you sure you want to forfeit this game?')) {
+                    socketService.forfeit();
+                  }
+                }}
+              >
+                🏳️ Forfeit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
