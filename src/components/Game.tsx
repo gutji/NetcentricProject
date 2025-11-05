@@ -144,6 +144,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
 
     socketService.onNicknameSet((data) => {
       setMyPlayerId(data.clientId);
+      try { localStorage.setItem('nickname', data.nickname); window.dispatchEvent(new CustomEvent('nicknameChanged', { detail: data.nickname })); } catch {}
       showMessage("success", `Welcome, ${data.nickname}!`);
       setGameState((prev) => ({ ...prev, phase: "lobby" }));
     });
