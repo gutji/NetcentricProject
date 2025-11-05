@@ -479,13 +479,23 @@ io.on('connection', (socket) => {
             gameState.activeGames.delete(client.gameId);
             updateClientStats();
         } else {
-            // Switch turns
-            gameData.currentTurn = opponent.id;
-            client.socket.emit('opponentTurn');
-            opponent.socket.emit('yourTurn');
+            // Blitz mode rule: on hit, the same player continues and timer resets
+            if (gameData.mode === 'blitz' && result === 'hit') {
+                // Keep currentTurn as the same player
+                // Re-emit turn events to keep clients in sync
+                client.socket.emit('yourTurn');
+                opponent.socket.emit('opponentTurn');
+                // Reset per-turn timer for the same player
+                startTurnTimer(client.gameId);
+            } else {
+                // Classic behavior: switch turns after any shot (or on miss in blitz)
+                gameData.currentTurn = opponent.id;
+                client.socket.emit('opponentTurn');
+                opponent.socket.emit('yourTurn');
 
-            // Reset per-turn timer for the next player
-            startTurnTimer(client.gameId);
+                // Reset per-turn timer for the next player
+                startTurnTimer(client.gameId);
+            }
         }
     });
 
