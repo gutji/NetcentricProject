@@ -79,6 +79,19 @@ class SocketService {
     this.socket?.emit('fire', { row, col });
   }
 
+  // Pause/Resume/Forfeit
+  pauseGame(): void {
+    this.socket?.emit('pauseGame');
+  }
+
+  resumeGame(): void {
+    this.socket?.emit('resumeGame');
+  }
+
+  forfeit(): void {
+    this.socket?.emit('forfeit');
+  }
+
   // Event listeners
   onConnect(callback: () => void): void {
     this.socket?.on('connect', callback);
@@ -126,6 +139,18 @@ class SocketService {
 
   onGameOver(callback: (data: any) => void): void {
     this.socket?.on('gameOver', callback);
+  }
+
+  onGamePaused(callback: (data: any) => void): void {
+    this.socket?.on('gamePaused', callback);
+  }
+
+  onGameResumed(callback: (data: any) => void): void {
+    this.socket?.on('gameResumed', callback);
+  }
+
+  onResumeVoteUpdate(callback: (data: { resumeReadyIds: string[] }) => void): void {
+    this.socket?.on('resumeVoteUpdate', callback);
   }
 
   onTimerUpdate(callback: (timer: number) => void): void {

@@ -21,6 +21,7 @@ export interface GameState {
   opponentBoard: CellState[][];
   ships: Ship[];
   isFirstPlayer: boolean;
+  paused?: boolean;
 }
 
 export type CellState = "W" | "S" | "H" | "M"; // Water, Ship, Hit, Miss

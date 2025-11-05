@@ -194,6 +194,9 @@ function startTurnTimer(gameId) {
     const gameData = gameState.activeGames.get(gameId);
     if (!gameData) return;
 
+    // Don't start timer if game is paused
+    if (gameData.paused) return;
+
     // Clear any existing timer
     if (gameData.timer) {
         clearInterval(gameData.timer);
@@ -324,6 +327,8 @@ io.on('connection', (socket) => {
                 gameTimer: 10, // 10 seconds per turn (reused field name)
                 startTime: Date.now(),
                 status: 'waiting_for_ships',
+                paused: false,
+                resumeVotes: new Set(),
                 mode
             };
             
@@ -417,6 +422,7 @@ io.on('connection', (socket) => {
 
         const gameData = gameState.activeGames.get(client.gameId);
         if (!gameData || gameData.currentTurn !== client.id) return;
+        if (gameData.paused) return; // no actions during pause
 
         const opponent = gameData.players.find(p => p.id !== client.id);
         if (!opponent || !opponent.board) return;
@@ -481,6 +487,114 @@ io.on('connection', (socket) => {
             // Reset per-turn timer for the next player
             startTurnTimer(client.gameId);
         }
+    });
+
+    // Pause/Resume handlers
+    socket.on('pauseGame', () => {
+        const client = gameState.connectedClients.get(socket.id);
+        if (!client || !client.gameId) return;
+        const gameData = gameState.activeGames.get(client.gameId);
+        if (!gameData || gameData.paused) return;
+        if (gameData.timer) {
+            clearInterval(gameData.timer);
+            gameData.timer = null;
+        }
+        gameData.paused = true;
+        // clear previous resume votes
+        try { gameData.resumeVotes = new Set(); } catch(e) { gameData.resumeVotes = { _tmp: true }; }
+        io.to(client.gameId).emit('gamePaused', { by: client.id, resumeReadyIds: [] });
+        console.log(`Game ${client.gameId} paused by ${client.nickname}`);
+    });
+
+    socket.on('resumeGame', () => {
+        const client = gameState.connectedClients.get(socket.id);
+        if (!client || !client.gameId) return;
+        const gameData = gameState.activeGames.get(client.gameId);
+        if (!gameData || !gameData.paused) return;
+        // track votes
+        if (!(gameData.resumeVotes instanceof Set)) {
+            gameData.resumeVotes = new Set();
+        }
+        gameData.resumeVotes.add(client.id);
+        const readyIds = Array.from(gameData.resumeVotes);
+        io.to(client.gameId).emit('resumeVoteUpdate', { resumeReadyIds: readyIds });
+
+        // if both players voted, resume
+        const allIds = gameData.players.map(p => p.id);
+        const allReady = allIds.every(id => gameData.resumeVotes.has(id));
+        if (allReady) {
+            gameData.paused = false;
+            // clear votes
+            gameData.resumeVotes = new Set();
+            io.to(client.gameId).emit('gameResumed', { by: client.id });
+            const gameId = client.gameId;
+            const gd = gameState.activeGames.get(gameId);
+            if (!gd) return;
+            if (gd.timer) {
+                clearInterval(gd.timer);
+                gd.timer = null;
+            }
+            const interval = setInterval(() => {
+                const local = gameState.activeGames.get(gameId);
+                if (!local || local.paused) {
+                    clearInterval(interval);
+                    return;
+                }
+                local.gameTimer -= 1;
+                io.to(gameId).emit('timerUpdate', local.gameTimer);
+                if (local.gameTimer <= 0) {
+                    clearInterval(interval);
+                    const currentPlayerId = local.currentTurn;
+                    const nextPlayer = local.players.find(p => p.id !== currentPlayerId);
+                    const currentPlayer = local.players.find(p => p.id === currentPlayerId);
+                    if (currentPlayer && nextPlayer) {
+                        local.currentTurn = nextPlayer.id;
+                        currentPlayer.socket.emit('opponentTurn');
+                        nextPlayer.socket.emit('yourTurn');
+                    }
+                    startTurnTimer(gameId);
+                }
+            }, 1000);
+            gd.timer = interval;
+            io.to(gameId).emit('timerUpdate', gd.gameTimer);
+            console.log(`Game ${client.gameId} resumed after both players confirmed.`);
+        }
+    });
+
+    socket.on('forfeit', () => {
+        const client = gameState.connectedClients.get(socket.id);
+        if (!client || !client.gameId) return;
+        const gameData = gameState.activeGames.get(client.gameId);
+        if (!gameData) return;
+        // Clear timer
+        if (gameData.timer) {
+            clearInterval(gameData.timer);
+            gameData.timer = null;
+        }
+        // Opponent wins
+        const opponent = gameData.players.find(p => p.id !== client.id);
+        if (opponent) {
+            opponent.score += 1;
+            opponent.headtoheadWins[client.id] = (opponent.headtoheadWins[client.id] || 0) + 1;
+            // Record last matchup and winner for rematch preference
+            opponent.lastOpponentId = client.id;
+            client.lastOpponentId = opponent.id;
+            opponent.lastWinnerId = opponent.id;
+            client.lastWinnerId = opponent.id;
+            opponent.socket.emit('gameOver', { result: 'win' });
+            client.socket.emit('gameOver', { result: 'loss' });
+        }
+        console.log(`Game ${client.gameId} forfeit: ${client.nickname} resigned.`);
+        // Clean up
+        gameData.players.forEach(player => {
+            player.status = 'lobby';
+            player.gameId = null;
+            player.playerIndex = null;
+            player.board = null;
+            player.isReady = false;
+        });
+        gameState.activeGames.delete(client.gameId);
+        updateClientStats();
     });
 
     socket.on('disconnect', () => {

@@ -5,9 +5,10 @@ interface GameStatusProps {
   gameState: GameState;
   message: GameMessage;
   myNickname: string;
+  onPause?: () => void;
 }
 
-function GameStatus({ gameState, message, myNickname }: GameStatusProps) {
+function GameStatus({ gameState, message, myNickname, onPause }: GameStatusProps) {
   const getOpponentNickname = () => {
     return gameState.players.find(p => p.nickname !== myNickname)?.nickname || 'Opponent';
   };
@@ -54,6 +55,14 @@ function GameStatus({ gameState, message, myNickname }: GameStatusProps) {
               ) : (
                 <span className="opponent-turn">⏳ Opponent's Turn</span>
               )}
+            </div>
+          )}
+
+          {gameState.phase === 'playing' && !gameState.paused && (
+            <div className="controls" style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button className="btn" onClick={onPause}>
+                ⏸️ Pause
+              </button>
             </div>
           )}
         </div>

@@ -109,6 +109,24 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build after pause/forfeit feature",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build after pause modal and mutual resume",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
