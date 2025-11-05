@@ -172,6 +172,15 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build frontend after blitz rule change",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
