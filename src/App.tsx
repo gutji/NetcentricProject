@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Game from './components/Game'
 import GameBlitz from './components/GameBlitz'
 import ModeMenu from './components/ModeMenu'
+import SettingsModal, { type GameSettings } from './components/SettingsModal'
+import { loadSettings, saveSettings, themeClass } from './services/settings'
 import './App.css'
 
 function App() {
@@ -10,6 +12,8 @@ function App() {
     return saved ?? null
   })
   const [inMatch, setInMatch] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [settings, setSettings] = useState<GameSettings>(() => loadSettings())
 
   useEffect(() => {
     if (mode) {
@@ -19,8 +23,20 @@ function App() {
     }
   }, [mode])
 
+  useEffect(() => {
+    saveSettings(settings)
+  }, [settings])
+
+  const appClassName = useMemo(() => {
+    const classes = ['App', themeClass(settings.theme)]
+    return classes.join(' ')
+  }, [settings.theme])
+
   return (
-    <div className="App">
+    <div className={appClassName}>
+      <div className="settings-button">
+        <button onClick={() => setShowSettings(true)} aria-label="Open settings">⚙️ Settings</button>
+      </div>
       {mode !== null && !inMatch && (
         <div className="mode-switcher">
           <button onClick={() => setMode(null)} aria-label="Change mode">
@@ -31,6 +47,13 @@ function App() {
       {mode === null && <ModeMenu onSelect={setMode} />}
       {mode === 'classic' && <Game mode="classic" onInMatchChange={setInMatch} />}
       {mode === 'blitz' && <GameBlitz onInMatchChange={setInMatch} />}
+
+      <SettingsModal
+        open={showSettings}
+        settings={settings}
+        onChange={setSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   )
 }

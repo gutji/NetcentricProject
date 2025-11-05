@@ -2,7 +2,6 @@
 
 .App {
   min-height: 100vh;
-  height: 100%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   margin: 0;
   padding: 0;
@@ -39,6 +38,40 @@ body {
 
 .mode-switcher button:hover {
   background: rgba(0, 0, 0, 0.35);
+}
+
+/* Settings button */
+.settings-button {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+}
+.settings-button button {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.settings-button button:hover { background: rgba(0, 0, 0, 0.35); }
+
+/* Theme presets */
+.App.theme-classic {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.App.theme-ocean {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+.App.theme-purple {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+}
+.App.theme-midnight {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+}
+.App.theme-blitz {
+  background: linear-gradient(135deg, #004e92 0%, #000428 100%);
 }
 
 /* Global button styles */
