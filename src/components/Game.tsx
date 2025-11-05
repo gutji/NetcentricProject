@@ -14,6 +14,7 @@ import "./Game.css";
 import Chat from "./Chat";
 import "./Chat.css";
 import ShipPlacement from "./ShipPlacement";
+import { playHit, playMiss } from "../services/sound";
 
 type GameProps = { mode?: 'classic' | 'blitz'; onInMatchChange?: (inMatch: boolean) => void };
 
@@ -235,6 +236,12 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
           result === "hit" ? "Direct hit!" : "Miss!"
         );
       }
+
+      // Play result SFX (hit or miss) after result arrives
+      try {
+        if (result === 'hit') playHit();
+        else playMiss();
+      } catch {}
     });
 
     socketService.onGameOver((data) => {
