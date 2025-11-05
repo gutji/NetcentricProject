@@ -41,7 +41,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     "win" | "loss" | "timeout" | null
   >(null);
   const [resumeReadyIds, setResumeReadyIds] = useState<string[]>([]);
-  const [showHowToPlay, setShowHowToPlay] = useState<boolean>(false);
+  // 'How to Play' is now shown from Settings at App level.
 
   const socketService = SocketService.getInstance();
 
@@ -300,46 +300,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     };
   }, [myPlayerId, showMessage, socketService]);
 
-  const renderHowToPlayModal = () => (
-    <div className="modal-overlay" onClick={() => setShowHowToPlay(false)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>📚 How to Play Battleship</h2>
-        <div className="how-to-play-content">
-          <h3>🎯 Objective</h3>
-          <p>Be the first to sink all of your opponent's ships!</p>
-          
-          <h3>📋 Game Setup</h3>
-          <p>• Place your ships on the grid by dragging or clicking</p>
-          <p>• Ships cannot overlap or touch each other</p>
-          <p>• Ships can be placed horizontally or vertically</p>
-          
-          <h3>⚓ Fleet Composition</h3>
-          <p>• Carrier (5 squares) - 1 ship</p>
-          <p>• Battleship (4 squares) - 1 ship</p>
-          <p>• Cruiser (3 squares) - 1 ship</p>
-          <p>• Submarine (3 squares) - 1 ship</p>
-          <p>• Destroyer (2 squares) - 1 ship</p>
-          
-          <h3>🎮 Gameplay</h3>
-          <p>• Take turns firing at your opponent's grid</p>
-          <p>• Click on a square in the "Enemy Waters" grid to fire</p>
-          <p>• Red squares indicate hits, blue squares indicate misses</p>
-          <p>• Green squares show your own ships</p>
-          
-          <h3>🏆 Winning</h3>
-          <p>• Sink all enemy ships to win!</p>
-          <p>• A ship is sunk when all its squares are hit</p>
-          
-          <h3>⏸️ Game Controls</h3>
-          <p>• Use the Pause button during gameplay to pause</p>
-          <p>• Both players must agree to resume</p>
-        </div>
-        <button className="close-button" onClick={() => setShowHowToPlay(false)}>
-          Close
-        </button>
-      </div>
-    </div>
-  );
+  // Removed local How-to-Play modal; now opened from Settings in App.
 
   const renderNicknamePhase = () => (
     <div className="nickname-phase">
@@ -518,14 +479,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
 
   return (
     <div className="game-container">
-      {/* How to Play button - always visible at top left */}
-      <button 
-        className="how-to-play-btn-fixed"
-        onClick={() => setShowHowToPlay(true)}
-        title="How to Play"
-      >
-        📚 How to Play
-      </button>
+      {/* How to Play entry moved into Settings modal. */}
 
       {gameState.phase === "nickname" && renderNicknamePhase()}
       {gameState.phase === "lobby" && renderLobbyPhase()}
@@ -535,8 +489,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
         gameState.phase === "game-over") &&
         renderGamePhase()}
 
-      {/* How to Play Modal */}
-      {showHowToPlay && renderHowToPlayModal()}
+      {/* How to Play modal is rendered at App level. */}
 
       {/* Game Over Modal */}
       {showGameOverModal &&

@@ -163,6 +163,15 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build after moving HowTo into settings",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

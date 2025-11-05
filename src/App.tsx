@@ -3,6 +3,7 @@ import Game from './components/Game'
 import GameBlitz from './components/GameBlitz'
 import ModeMenu from './components/ModeMenu'
 import SettingsModal, { type GameSettings } from './components/SettingsModal'
+import HowToPlayModal from './components/HowToPlayModal'
 import { loadSettings, saveSettings, themeClass } from './services/settings'
 import './App.css'
 
@@ -14,6 +15,7 @@ function App() {
   const [inMatch, setInMatch] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<GameSettings>(() => loadSettings())
+  const [showHowTo, setShowHowTo] = useState(false)
 
   useEffect(() => {
     if (mode) {
@@ -58,7 +60,10 @@ function App() {
         settings={settings}
         onChange={setSettings}
         onClose={() => setShowSettings(false)}
+        onShowHowToPlay={() => { setShowSettings(false); setShowHowTo(true); }}
       />
+
+      <HowToPlayModal open={showHowTo} onClose={() => setShowHowTo(false)} />
     </div>
   )
 }

@@ -12,6 +12,7 @@ interface SettingsModalProps {
   settings: GameSettings;
   onChange: (next: GameSettings) => void;
   onClose: () => void;
+  onShowHowToPlay?: () => void;
 }
 
 const presets: { value: ThemePreset; label: string }[] = [
@@ -22,7 +23,7 @@ const presets: { value: ThemePreset; label: string }[] = [
   { value: 'blitz', label: 'Blitz Blue' },
 ];
 
-export default function SettingsModal({ open, settings, onChange, onClose }: SettingsModalProps) {
+export default function SettingsModal({ open, settings, onChange, onClose, onShowHowToPlay }: SettingsModalProps) {
   if (!open) return null;
   const update = (patch: Partial<GameSettings>) => onChange({ ...settings, ...patch });
 
@@ -65,7 +66,8 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Set
           <label htmlFor="muteSfx">Mute Sound Effects</label>
         </div>
 
-        <div className="modal-actions">
+        <div className="modal-actions" style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+          <button className="btn" onClick={() => { onShowHowToPlay?.(); }}>📚 How to Play</button>
           <button className="btn" onClick={onClose}>Close</button>
         </div>
       </div>
