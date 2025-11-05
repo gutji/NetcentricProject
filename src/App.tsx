@@ -37,6 +37,11 @@ function App() {
       <div className="settings-button">
         <button onClick={() => setShowSettings(true)} aria-label="Open settings">⚙️ Settings</button>
       </div>
+      {mode && (
+        <div className="mode-badge" aria-live="polite">
+          {mode === 'blitz' ? 'Blitz Mode' : 'Classic Mode'}
+        </div>
+      )}
       {mode !== null && !inMatch && (
         <div className="mode-switcher">
           <button onClick={() => setMode(null)} aria-label="Change mode">

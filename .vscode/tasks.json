@@ -154,6 +154,15 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build after adding mode badge",
+			"type": "shell",
+			"command": "npm run build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
