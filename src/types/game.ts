@@ -50,3 +50,13 @@ export interface ClientInfo {
 export const GRID_SIZE = 10;
 
 export const SHIP_SIZES = [4, 4, 4, 4]; // Carrier, Battleship, Cruiser, Submarine, Destroyer
+
+// Chat
+export interface ChatMessage {
+  id: number;
+  gameId: string;
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: string; // ISO
+}

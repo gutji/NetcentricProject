@@ -597,6 +597,33 @@ io.on('connection', (socket) => {
         updateClientStats();
     });
 
+    // In-game chat (Blitz mode only)
+    socket.on('sendChatMessage', ({ message }) => {
+        const client = gameState.connectedClients.get(socket.id);
+        if (!client || !client.gameId) return;
+
+        const text = (message ?? '').toString().trim();
+        if (!text) return;
+        if (text.length > 200) return; // basic flood control
+
+        const gameData = gameState.activeGames.get(client.gameId);
+        if (!gameData) return;
+        // Only allow chat in blitz mode
+        if (gameData.mode !== 'blitz') return;
+
+        const payload = {
+            id: Date.now(),
+            gameId: gameData.id,
+            playerId: client.id,
+            playerName: client.nickname || 'Player',
+            message: text,
+            timestamp: new Date().toISOString(),
+        };
+
+        // Emit to both players in the same game room
+        io.to(gameData.id).emit('chatMessage', payload);
+    });
+
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         

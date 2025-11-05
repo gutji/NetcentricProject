@@ -11,6 +11,8 @@ import Grid from "./Grid";
 import GameStatus from "./GameStatus";
 import PlayerControls from "./PlayerControls";
 import "./Game.css";
+import Chat from "./Chat";
+import "./Chat.css";
 import ShipPlacement from "./ShipPlacement";
 
 type GameProps = { mode?: 'classic' | 'blitz'; onInMatchChange?: (inMatch: boolean) => void };
@@ -490,6 +492,11 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
         renderGamePhase()}
 
       {/* How to Play modal is rendered at App level. */}
+
+      {/* Blitz-only chat: visible during gameplay */}
+      {mode === 'blitz' && gameState.phase === 'playing' && gameState.gameId && (
+        <Chat gameId={gameState.gameId} myPlayerId={myPlayerId} />
+      )}
 
       {/* Game Over Modal */}
       {showGameOverModal &&
