@@ -165,6 +165,20 @@ class SocketService {
     this.socket?.on('serverReset', callback);
   }
 
+  // Chat (blitz-only on server)
+  sendChatMessage(message: string): void {
+    this.socket?.emit('sendChatMessage', { message });
+  }
+
+  onChatMessage(callback: (data: any) => void): void {
+    this.socket?.on('chatMessage', callback);
+  }
+
+  offChatMessage(callback: (data: any) => void): void {
+    // socket.io-client v4 supports off
+    (this.socket as any)?.off?.('chatMessage', callback);
+  }
+
   // Cleanup method
   removeAllListeners(): void {
     this.socket?.removeAllListeners();
