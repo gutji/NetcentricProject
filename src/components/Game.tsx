@@ -28,7 +28,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     timer: 10,
     myBoard: createEmptyBoard(),
     opponentBoard: createEmptyBoard(),
-    ships: createInitialShips(),
+    ships: createInitialShips(mode),
     isFirstPlayer: false,
   });
 
@@ -298,7 +298,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
         timer: 10,
         myBoard: createEmptyBoard(),
         opponentBoard: createEmptyBoard(),
-        ships: createInitialShips(),
+        ships: createInitialShips(mode),
         isFirstPlayer: false,
       });
       setNickname("");
@@ -465,7 +465,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
-      ships: createInitialShips(),
+      ships: createInitialShips(mode),
       paused: false,
     }));
     setShowGameOverModal(false);
@@ -481,7 +481,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
-      ships: createInitialShips(),
+      ships: createInitialShips(mode),
     }));
     setShowGameOverModal(false);
     showMessage("info", "Returned to lobby.");
