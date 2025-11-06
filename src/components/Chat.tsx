@@ -88,8 +88,8 @@ const Chat: React.FC<ChatProps> = ({ gameId, myPlayerId }) => {
               return (
                 <div key={m.id} className={"chat-message " + (mine ? 'mine' : 'theirs')}>
                   <div className="chat-meta">
-                    <span className="name">{m.playerName}</span>
-                    <span className="time"> {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="name">{m.playerName+" "}</span>
+                    {/* <span className="time"> {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span> */}
                   </div>
                   <div className="chat-text">{m.message}</div>
                 </div>

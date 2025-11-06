@@ -79,6 +79,18 @@ class SocketService {
     this.socket?.emit('fire', { row, col });
   }
 
+  // Blitz Power-Ups
+  usePowerUp(type: 'cannons' | 'scan' | 'protect', payload?: { row?: number; col?: number; orientation?: 'h' | 'v' }): void {
+    this.socket?.emit('usePowerUp', { type, ...payload });
+  }
+
+  onScanResult(callback: (data: { row: number; col: number; count: number }) => void): void {
+    this.socket?.on('scanResult', callback);
+  }
+  offScanResult(callback: (data: { row: number; col: number; count: number }) => void): void {
+    (this.socket as any)?.off?.('scanResult', callback);
+  }
+
   // Pause/Resume/Forfeit
   pauseGame(): void {
     this.socket?.emit('pauseGame');
