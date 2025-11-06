@@ -1,10 +1,13 @@
 
 export type ThemePreset = 'classic' | 'ocean' | 'purple' | 'midnight' | 'blitz';
 
+export type AvatarId = 'ship' | 'anchor' | 'kraken' | 'shark';
+
 export interface GameSettings {
   theme: ThemePreset;
   muteMusic: boolean;
   muteSfx: boolean;
+  avatar?: AvatarId; // optional for backward compatibility
 }
 
 interface SettingsModalProps {

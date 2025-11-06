@@ -14,6 +14,7 @@ import "./Game.css";
 import Chat from "./Chat";
 import "./Chat.css";
 import ShipPlacement from "./ShipPlacement";
+import { playHit, playMiss } from "../services/sound";
 
 type GameProps = { mode?: 'classic' | 'blitz'; onInMatchChange?: (inMatch: boolean) => void };
 
@@ -27,7 +28,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     timer: 10,
     myBoard: createEmptyBoard(),
     opponentBoard: createEmptyBoard(),
-    ships: createInitialShips(),
+    ships: createInitialShips(mode),
     isFirstPlayer: false,
   });
 
@@ -171,6 +172,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
 
     socketService.onNicknameSet((data) => {
       setMyPlayerId(data.clientId);
+      try { localStorage.setItem('nickname', data.nickname); window.dispatchEvent(new CustomEvent('nicknameChanged', { detail: data.nickname })); } catch {}
       showMessage("success", `Welcome, ${data.nickname}!`);
       setGameState((prev) => ({ ...prev, phase: "lobby" }));
     });
@@ -261,6 +263,12 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
           result === "hit" ? "Direct hit!" : "Miss!"
         );
       }
+
+      // Play result SFX (hit or miss) after result arrives
+      try {
+        if (result === 'hit') playHit();
+        else playMiss();
+      } catch {}
     });
 
     socketService.onGameOver((data) => {
@@ -317,7 +325,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
         timer: 10,
         myBoard: createEmptyBoard(),
         opponentBoard: createEmptyBoard(),
-        ships: createInitialShips(),
+        ships: createInitialShips(mode),
         isFirstPlayer: false,
       });
       setNickname("");
@@ -599,7 +607,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
-      ships: createInitialShips(),
+      ships: createInitialShips(mode),
       paused: false,
       powerUpsUsed: { cannons: false, scan: false, protect: false },
     }));
@@ -616,7 +624,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
       timer: 10,
       myBoard: createEmptyBoard(),
       opponentBoard: createEmptyBoard(),
-      ships: createInitialShips(),
+      ships: createInitialShips(mode),
       powerUpsUsed: { cannons: false, scan: false, protect: false },
     }));
     setShowGameOverModal(false);

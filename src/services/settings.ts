@@ -1,4 +1,4 @@
-import type { ThemePreset, GameSettings } from '../components/SettingsModal';
+import type { ThemePreset, GameSettings, AvatarId } from '../components/SettingsModal';
 
 const STORAGE_KEY = 'gameSettings';
 
@@ -6,6 +6,7 @@ const DEFAULTS: GameSettings = {
   theme: 'classic',
   muteMusic: false,
   muteSfx: false,
+  avatar: 'ship' as AvatarId,
 };
 
 export function loadSettings(): GameSettings {

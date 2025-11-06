@@ -19,12 +19,19 @@ body {
   overflow-x: hidden;
 }
 
-/* Mode switcher button (top-right) */
-.mode-switcher {
+/* Top-right cluster: mode switcher (left) + profile (right) */
+.top-right-controls {
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-switcher {
+  position: static; /* sits inside top-right-controls */
 }
 
 .mode-switcher button {
@@ -56,6 +63,32 @@ body {
   cursor: pointer;
 }
 .settings-button button:hover { background: rgba(0, 0, 0, 0.35); }
+
+/* Profile button */
+.profile-button button {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-button button:hover { background: rgba(0, 0, 0, 0.35); }
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+.avatar-name { font-weight: 600; font-size: 12px; }
 
 /* Mode badge */
 .mode-badge {
