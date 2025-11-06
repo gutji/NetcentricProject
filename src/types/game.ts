@@ -22,6 +22,12 @@ export interface GameState {
   ships: Ship[];
   isFirstPlayer: boolean;
   paused?: boolean;
+  // Blitz power-ups usage tracking (client-side convenience)
+  powerUpsUsed?: {
+    cannons: boolean;
+    scan: boolean;
+    protect: boolean;
+  };
 }
 
 export type CellState = "W" | "S" | "H" | "M"; // Water, Ship, Hit, Miss

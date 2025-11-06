@@ -329,7 +329,16 @@ io.on('connection', (socket) => {
                 status: 'waiting_for_ships',
                 paused: false,
                 resumeVotes: new Set(),
-                mode
+                mode,
+                // Blitz power-ups state
+                powerUpsUsed: {
+                    [firstPlayer.id]: { cannons: false, scan: false, protect: false },
+                    [secondPlayer.id]: { cannons: false, scan: false, protect: false }
+                },
+                protectNextTurn: {
+                    [firstPlayer.id]: false,
+                    [secondPlayer.id]: false
+                }
             };
             
             gameState.activeGames.set(gameId, gameData);
@@ -479,23 +488,169 @@ io.on('connection', (socket) => {
             gameState.activeGames.delete(client.gameId);
             updateClientStats();
         } else {
-            // Blitz mode rule: on hit, the same player continues and timer resets
-            if (gameData.mode === 'blitz' && result === 'hit') {
-                // Keep currentTurn as the same player
-                // Re-emit turn events to keep clients in sync
+            // Protect logic: if opponent has protection for their next defense, a hit won't allow chaining
+            const opponentProtected = !!(gameData.protectNextTurn && gameData.protectNextTurn[opponent.id]);
+
+            // Blitz mode rule: on hit, the same player continues and timer resets (unless protection active)
+            if (gameData.mode === 'blitz' && result === 'hit' && !opponentProtected) {
                 client.socket.emit('yourTurn');
                 opponent.socket.emit('opponentTurn');
-                // Reset per-turn timer for the same player
                 startTurnTimer(client.gameId);
             } else {
-                // Classic behavior: switch turns after any shot (or on miss in blitz)
+                // Switch turns after any shot (classic, miss in blitz, or protected hit)
                 gameData.currentTurn = opponent.id;
                 client.socket.emit('opponentTurn');
                 opponent.socket.emit('yourTurn');
-
-                // Reset per-turn timer for the next player
+                // If protection was active for the defender, consume it after shooter's action completes
+                if (opponentProtected && gameData.protectNextTurn) {
+                    gameData.protectNextTurn[opponent.id] = false;
+                }
                 startTurnTimer(client.gameId);
             }
+        }
+    });
+
+    // Blitz Power-Ups
+    socket.on('usePowerUp', (payload) => {
+        const client = gameState.connectedClients.get(socket.id);
+        if (!client || !client.gameId) return;
+        const gameData = gameState.activeGames.get(client.gameId);
+        if (!gameData || gameData.currentTurn !== client.id) return;
+        if (gameData.paused) return;
+
+        const type = (payload && payload.type) || null;
+        if (gameData.mode !== 'blitz') return; // power-ups are blitz-only
+        if (!['cannons','scan','protect'].includes(type)) return;
+
+        // Ensure usage only once per match per player
+        if (!gameData.powerUpsUsed) {
+            gameData.powerUpsUsed = {
+                [client.id]: { cannons: false, scan: false, protect: false },
+            };
+        }
+        if (!gameData.powerUpsUsed[client.id]) {
+            gameData.powerUpsUsed[client.id] = { cannons: false, scan: false, protect: false };
+        }
+        if (gameData.powerUpsUsed[client.id][type]) return; // already used
+
+        const opponent = gameData.players.find(p => p.id !== client.id);
+        if (!opponent || !opponent.board) return;
+
+        const opponentBoard = opponent.board;
+
+        // Helper to finalize turn switching (used by scan/protect and cannons if needed)
+        const endTurnToOpponent = () => {
+            gameData.currentTurn = opponent.id;
+            client.socket.emit('opponentTurn');
+            opponent.socket.emit('yourTurn');
+            startTurnTimer(client.gameId);
+        };
+
+        if (type === 'scan') {
+            const row = Math.max(0, Math.min(opponentBoard.length - 1, payload?.row ?? 0));
+            const col = Math.max(0, Math.min(opponentBoard[0].length - 1, payload?.col ?? 0));
+            let count = 0;
+            for (let r = row - 1; r <= row + 1; r++) {
+                for (let c = col - 1; c <= col + 1; c++) {
+                    if (r >= 0 && r < opponentBoard.length && c >= 0 && c < opponentBoard[0].length) {
+                        if (opponentBoard[r][c] === 'S') count++;
+                    }
+                }
+            }
+            // Mark used
+            gameData.powerUpsUsed[client.id].scan = true;
+            // Send result only to requester
+            client.socket.emit('scanResult', { row, col, count });
+            // Using a power-up consumes the action; switch turn
+            endTurnToOpponent();
+            return;
+        }
+
+        if (type === 'protect') {
+            // Activate protection for this player against opponent's next turn
+            if (!gameData.protectNextTurn) {
+                gameData.protectNextTurn = { [client.id]: false };
+            }
+            gameData.protectNextTurn[client.id] = true;
+            gameData.powerUpsUsed[client.id].protect = true;
+            // Switch turn to opponent; no board changes
+            endTurnToOpponent();
+            return;
+        }
+
+        if (type === 'cannons') {
+            // Fire in a 2x2 area anchored at (row, col): (r,c), (r+1,c), (r,c+1), (r+1,c+1)
+            const row = Math.max(0, Math.min(opponentBoard.length - 1, payload?.row ?? 0));
+            const col = Math.max(0, Math.min(opponentBoard[0].length - 1, payload?.col ?? 0));
+            const coords = [
+                [row, col],
+                [row + 1, col],
+                [row, col + 1],
+                [row + 1, col + 1],
+            ].filter(([r, c]) => r >= 0 && r < opponentBoard.length && c >= 0 && c < opponentBoard[0].length);
+            let anyHit = false;
+
+            coords.forEach(([r, c]) => {
+                const cell = opponentBoard[r][c];
+                if (cell === 'H' || cell === 'M') {
+                    return; // already fired here; skip
+                }
+                let result = 'miss';
+                if (cell === 'S') {
+                    result = 'hit';
+                    opponentBoard[r][c] = 'H';
+                    anyHit = true;
+                } else {
+                    opponentBoard[r][c] = 'M';
+                }
+                // Emit individual results so UI updates like a normal shot
+                client.socket.emit('fireResult', { row: r, col: c, result, isOwnGrid: false });
+                opponent.socket.emit('fireResult', { row: r, col: c, result, isOwnGrid: true });
+            });
+
+            // Check for win condition after multi-shot
+            const allShipsSunk = !opponentBoard.flat().includes('S');
+            gameData.powerUpsUsed[client.id].cannons = true;
+
+            if (allShipsSunk) {
+                client.score += 1;
+                client.headtoheadWins[opponent.id] = (client.headtoheadWins[opponent.id] || 0) + 1;
+                client.lastOpponentId = opponent.id;
+                opponent.lastOpponentId = client.id;
+                client.lastWinnerId = client.id;
+                opponent.lastWinnerId = client.id;
+                if (gameData.timer) clearInterval(gameData.timer);
+                client.socket.emit('gameOver', { result: 'win' });
+                opponent.socket.emit('gameOver', { result: 'loss' });
+                console.log(`Game ${client.gameId} over (cannons): ${client.nickname} wins!`);
+                gameData.players.forEach(p => {
+                    p.status = 'lobby';
+                    p.gameId = null;
+                    p.playerIndex = null;
+                    p.board = null;
+                    p.isReady = false;
+                });
+                gameState.activeGames.delete(client.gameId);
+                updateClientStats();
+                return;
+            }
+
+            // Apply blitz chaining rule across the composite result, considering protection on defender
+            const opponentProtected = !!(gameData.protectNextTurn && gameData.protectNextTurn[opponent.id]);
+            if (gameData.mode === 'blitz' && anyHit && !opponentProtected) {
+                client.socket.emit('yourTurn');
+                opponent.socket.emit('opponentTurn');
+                startTurnTimer(client.gameId);
+            } else {
+                gameData.currentTurn = opponent.id;
+                client.socket.emit('opponentTurn');
+                opponent.socket.emit('yourTurn');
+                if (opponentProtected && gameData.protectNextTurn) {
+                    gameData.protectNextTurn[opponent.id] = false;
+                }
+                startTurnTimer(client.gameId);
+            }
+            return;
         }
     });
 
