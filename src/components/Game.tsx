@@ -67,6 +67,21 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     showMessage("info", "Setting nickname...");
   }, [nickname, socketService, showMessage]);
 
+  // Auto-login: if a nickname exists in localStorage, reuse it so switching modes doesn't require re-entering
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nickname');
+      if (saved && saved.trim().length >= 2) {
+        setNickname(saved);
+        // Connect and set nickname immediately so we bypass the nickname screen on remounts
+        socketService.connect();
+        socketService.setNickname(saved.trim());
+        showMessage('info', `Welcome back, ${saved}!`);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const joinGameQueue = useCallback(() => {
     socketService.joinQueue(mode);
     showMessage("info", "Looking for an opponent...");
@@ -410,8 +425,12 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
     <div className="lobby-phase">
       <h2>Ready to Battle! ⚓</h2>
       <p>Welcome aboard, Captain {nickname}!</p>
+      <div className="lobby-mode" aria-live="polite">
+        <span className="mode-pill">{mode === 'blitz' ? 'Blitz' : 'Classic'}</span>
+        <span className="mode-desc"> You are queued to play in {mode === 'blitz' ? 'Blitz' : 'Classic'} mode.</span>
+      </div>
       <button onClick={joinGameQueue} className="join-queue-btn">
-        🎯 Find Opponent
+        🎯 Find Opponent ({mode === 'blitz' ? 'Blitz' : 'Classic'})
       </button>
 
       {connectedClients.length > 0 && (
@@ -530,7 +549,7 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
                 if (gameState.powerUpsUsed?.cannons) return;
                 setActivePower(activePower === 'cannons' ? null : 'cannons');
                 if (activePower !== 'cannons') {
-                  showMessage('info', 'Cannons ready: click a target cell on Enemy Waters to fire a 1x3 line.');
+                  showMessage('info', 'Cannons ready: click a target cell on Enemy Waters to fire a 2x2 area.');
                 }
               }}
             >
@@ -721,6 +740,14 @@ const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Waiting room banner with mode indicator */}
+      {gameState.phase === 'waiting' && (
+        <div className="waiting-banner" role="status" aria-live="polite">
+          <span className="mode-pill">{mode === 'blitz' ? 'Blitz' : 'Classic'}</span>
+          <span className="waiting-text"> Matching… Looking for an opponent in {mode === 'blitz' ? 'Blitz' : 'Classic'} mode.</span>
         </div>
       )}
     </div>
