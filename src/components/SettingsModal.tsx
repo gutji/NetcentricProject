@@ -49,15 +49,6 @@ export default function SettingsModal({ open, settings, onChange, onClose, onSho
           </select>
         </div>
 
-        <div className="mb-2" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input
-            id="muteMusic"
-            type="checkbox"
-            checked={settings.muteMusic}
-            onChange={(e) => update({ muteMusic: e.target.checked })}
-          />
-          <label htmlFor="muteMusic">Mute Music</label>
-        </div>
 
         <div className="mb-3" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <input
