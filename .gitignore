@@ -37,6 +37,7 @@ out/
 coverage/
 .vercel/
 .netlify/
+.vscode/
 
 ### Operating System Files ###
 # These files are created by various operating systems and are not part of your project.
