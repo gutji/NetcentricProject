@@ -79,31 +79,6 @@ class SocketService {
     this.socket?.emit('fire', { row, col });
   }
 
-  // Blitz Power-Ups
-  usePowerUp(type: 'cannons' | 'scan' | 'protect', payload?: { row?: number; col?: number; orientation?: 'h' | 'v' }): void {
-    this.socket?.emit('usePowerUp', { type, ...payload });
-  }
-
-  onScanResult(callback: (data: { row: number; col: number; count: number }) => void): void {
-    this.socket?.on('scanResult', callback);
-  }
-  offScanResult(callback: (data: { row: number; col: number; count: number }) => void): void {
-    (this.socket as any)?.off?.('scanResult', callback);
-  }
-
-  // Pause/Resume/Forfeit
-  pauseGame(): void {
-    this.socket?.emit('pauseGame');
-  }
-
-  resumeGame(): void {
-    this.socket?.emit('resumeGame');
-  }
-
-  forfeit(): void {
-    this.socket?.emit('forfeit');
-  }
-
   // Event listeners
   onConnect(callback: () => void): void {
     this.socket?.on('connect', callback);
@@ -153,18 +128,6 @@ class SocketService {
     this.socket?.on('gameOver', callback);
   }
 
-  onGamePaused(callback: (data: any) => void): void {
-    this.socket?.on('gamePaused', callback);
-  }
-
-  onGameResumed(callback: (data: any) => void): void {
-    this.socket?.on('gameResumed', callback);
-  }
-
-  onResumeVoteUpdate(callback: (data: { resumeReadyIds: string[] }) => void): void {
-    this.socket?.on('resumeVoteUpdate', callback);
-  }
-
   onTimerUpdate(callback: (timer: number) => void): void {
     this.socket?.on('timerUpdate', callback);
   }
@@ -175,20 +138,6 @@ class SocketService {
 
   onServerReset(callback: () => void): void {
     this.socket?.on('serverReset', callback);
-  }
-
-  // Chat (blitz-only on server)
-  sendChatMessage(message: string): void {
-    this.socket?.emit('sendChatMessage', { message });
-  }
-
-  onChatMessage(callback: (data: any) => void): void {
-    this.socket?.on('chatMessage', callback);
-  }
-
-  offChatMessage(callback: (data: any) => void): void {
-    // socket.io-client v4 supports off
-    (this.socket as any)?.off?.('chatMessage', callback);
   }
 
   // Cleanup method

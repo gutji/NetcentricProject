@@ -41,28 +41,11 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
     setSelectedShip(ship);
   };
 
-  // Select a ship (tap or click)
-  const handleSelectShip = (ship: Ship) => {
-    setSelectedShip(ship);
-  };
-
   // Drag start from a placed cell on the board
   const handleCellDragStart = (row: number, col: number) => {
     const ship = getShipAtPosition(ships, row, col);
     if (ship) {
       setSelectedShip(ship);
-    }
-  };
-
-  // Touch drop handler via pointer (tap to place)
-  const handleCellTapOrClick = (row: number, col: number, cell: CellState) => {
-    // If tapping/clicking on a placed ship, pick it up
-    if (cell === 'S' && !selectedShip) {
-      handleCellDragStart(row, col);
-      return;
-    }
-    if (selectedShip) {
-      handleDrop(row, col);
     }
   };
 
@@ -134,37 +117,27 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
         <h4>Your Ships</h4>
         <div className="ships-list">
           {ships.map((ship) => (
-            <div key={ship.id} className="ship-item">
-              <div
-                className={`ship-draggable ${ship.orientation}`}
-                draggable
-                onDragStart={() => handleDragStart(ship)}
-                onClick={() => handleSelectShip(ship)}
-                title="Tap/Click to select; use ↻ to rotate"
-                style={{
-                  width:
-                    ship.orientation === "horizontal"
-                      ? `${ship.size * 35}px`
-                      : "35px",
-                  height:
-                    ship.orientation === "vertical"
-                      ? `${ship.size * 35}px`
-                      : "35px",
-                  opacity: ship.placed ? 0.5 : 1,
-                  cursor: "pointer",
-                }}
-              />
-              <button
-                type="button"
-                className="rotate-btn"
-                onClick={() => handleRotate(ship.id)}
-                aria-label="Rotate ship"
-                title="Rotate ship"
-              >
-                ↻
-              </button>
-            </div>
-          ))}
+            <div
+              key={ship.id}
+              className={`ship-draggable ${ship.orientation}`}
+              draggable
+              onDragStart={() => handleDragStart(ship)}
+              onClick={() => handleRotate(ship.id)}
+              title="Click to rotate (R)"
+              style={{
+                width:
+                  ship.orientation === "horizontal"
+                    ? `${ship.size * 35}px`
+                    : "35px",
+                height:
+                  ship.orientation === "vertical"
+                    ? `${ship.size * 35}px`
+                    : "35px",
+                opacity: ship.placed ? 0.5 : 1,
+                cursor: "grab",
+              }}
+            />
+          ))}{" "}
         </div>{" "}
       </div>
       <div className="placement-grid">
@@ -178,7 +151,6 @@ const ShipPlacement: React.FC<ShipPlacementProps> = ({
                 onDragOver={(e) => e.preventDefault()}
                 onDragStart={() => handleCellDragStart(rIdx, cIdx)}
                 onDrop={() => handleDrop(rIdx, cIdx)}
-                onClick={() => handleCellTapOrClick(rIdx, cIdx, cell)}
               />
             ))}
           </div>

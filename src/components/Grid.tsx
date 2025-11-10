@@ -6,13 +6,9 @@ interface GridProps {
   onCellClick: (row: number, col: number) => void;
   isMyGrid: boolean;
   interactive?: boolean;
-  highlightCells?: string[];
-  onCellHover?: (row: number, col: number) => void;
-  onHoverEnd?: () => void;
 }
 
-function Grid({ board, onCellClick, isMyGrid, interactive = false, highlightCells = [], onCellHover, onHoverEnd }: GridProps) {
-  const highlightSet = new Set(highlightCells);
+function Grid({ board, onCellClick, isMyGrid, interactive = false }: GridProps) {
   const getCellClass = (cellState: CellState) => {
     let className = 'cell'
     
@@ -40,14 +36,13 @@ function Grid({ board, onCellClick, isMyGrid, interactive = false, highlightCell
   }
 
   return (
-    <div className="grid" onMouseLeave={() => onHoverEnd && onHoverEnd()}>
+    <div className="grid">
       {board.map((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
             key={`${rowIndex}-${colIndex}`}
-            className={getCellClass(cell) + (highlightSet.has(`${rowIndex},${colIndex}`) ? ' scan-highlight' : '')}
+            className={getCellClass(cell)}
             onClick={() => handleCellClick(rowIndex, colIndex)}
-            onMouseEnter={() => onCellHover && onCellHover(rowIndex, colIndex)}
             data-row={rowIndex}
             data-col={colIndex}
           />

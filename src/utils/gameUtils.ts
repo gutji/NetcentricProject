@@ -8,17 +8,8 @@ export function createEmptyBoard(): CellState[][] {
     .map(() => Array(GRID_SIZE).fill("W"));
 }
 
-// Return ship sizes for the given mode. Defaults to classic sizes.
-function getShipSizesForMode(mode?: 'classic' | 'blitz'): number[] {
-  if (mode === 'blitz') {
-    // Blitz composition: Carrier 5, Battleship 4, Cruiser 3, Submarine 3, Destroyer 2
-    return [5, 4, 3, 3, 2];
-  }
-  return SHIP_SIZES;
-}
-
-export function createInitialShips(mode?: 'classic' | 'blitz'): Ship[] {
-  return getShipSizesForMode(mode).map((size, index) => ({
+export function createInitialShips(): Ship[] {
+  return SHIP_SIZES.map((size, index) => ({
     id: `ship-${index}`,
     size,
     position: null,
@@ -93,9 +84,9 @@ export function removeShip(board: CellState[][], ship: Ship): CellState[][] {
   return newBoard;
 }
 
-export function generateRandomBoard(mode?: 'classic' | 'blitz'): CellState[][] {
+export function generateRandomBoard(): CellState[][] {
   let board = createEmptyBoard();
-  const ships = createInitialShips(mode);
+  const ships = createInitialShips();
 
   for (const ship of ships) {
     let placed = false;

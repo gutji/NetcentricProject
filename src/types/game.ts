@@ -21,13 +21,6 @@ export interface GameState {
   opponentBoard: CellState[][];
   ships: Ship[];
   isFirstPlayer: boolean;
-  paused?: boolean;
-  // Blitz power-ups usage tracking (client-side convenience)
-  powerUpsUsed?: {
-    cannons: boolean;
-    scan: boolean;
-    protect: boolean;
-  };
 }
 
 export type CellState = "W" | "S" | "H" | "M"; // Water, Ship, Hit, Miss
@@ -56,13 +49,3 @@ export interface ClientInfo {
 export const GRID_SIZE = 10;
 
 export const SHIP_SIZES = [4, 4, 4, 4]; // Carrier, Battleship, Cruiser, Submarine, Destroyer
-
-// Chat
-export interface ChatMessage {
-  id: number;
-  gameId: string;
-  playerId: string;
-  playerName: string;
-  message: string;
-  timestamp: string; // ISO
-}
