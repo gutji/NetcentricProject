@@ -16,7 +16,9 @@ import "./Chat.css";
 import ShipPlacement from "./ShipPlacement";
 import { playHit, playMiss } from "../services/sound";
 
-const Game: React.FC = () => {
+type GameProps = { mode?: 'classic' | 'blitz'; onInMatchChange?: (inMatch: boolean) => void };
+
+const Game: React.FC<GameProps> = ({ mode = 'classic', onInMatchChange }) => {
   const [gameState, setGameState] = useState<GameState>({
     phase: "nickname",
     players: [],
@@ -81,10 +83,10 @@ const Game: React.FC = () => {
   }, []);
 
   const joinGameQueue = useCallback(() => {
-    socketService.joinQueue();
+    socketService.joinQueue(mode);
     showMessage("info", "Looking for an opponent...");
     setGameState((prev) => ({ ...prev, phase: "waiting" }));
-  }, [socketService, showMessage]);
+  }, [socketService, showMessage, mode]);
 
   const confirmShipPlacement = useCallback(() => {
     const boardString = getBoardString(gameState.myBoard);
@@ -159,6 +161,12 @@ const Game: React.FC = () => {
 
     return { myWins, oppWins };
   }, [connectedClients, getPlayersPair]);
+
+  useEffect(() => {
+    // Inform parent whether we're currently in a match (placing or playing)
+    const inMatch = gameState.phase === 'placing' || gameState.phase === 'playing';
+    onInMatchChange && onInMatchChange(inMatch);
+  }, [gameState.phase, onInMatchChange]);
 
   useEffect(() => {
     socketService.connect();
@@ -367,7 +375,7 @@ const Game: React.FC = () => {
     return () => {
       socketService.removeAllListeners();
     };
-  }, [myPlayerId, showMessage]);
+  }, [myPlayerId, showMessage, socketService]);
 
   // Removed local How-to-Play modal; now opened from Settings in App.
 
@@ -624,8 +632,8 @@ const Game: React.FC = () => {
     }));
     setShowGameOverModal(false);
     showMessage("info", "Searching for a rematch...");
-    socketService.joinQueue();
-  }, [socketService, showMessage]);
+    socketService.joinQueue(mode);
+  }, [socketService, showMessage, mode]);
 
   const handleReturnHome = useCallback(() => {
     setGameState((prev) => ({

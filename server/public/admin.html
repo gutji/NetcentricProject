@@ -83,6 +83,12 @@
             border-radius: 10px;
             margin-bottom: 20px;
         }
+        .games-section {
+            background: #313244;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
         
         .section-title {
             color: #89b4fa;
@@ -199,6 +205,13 @@
                 <!-- Clients will be populated here -->
             </div>
         </div>
+
+        <div class="games-section">
+            <h3 class="section-title">Active Games</h3>
+            <div id="gamesList">
+                <!-- Games will be populated here -->
+            </div>
+        </div>
         
         <div class="logs-section">
             <h3 class="section-title">Server Logs</h3>
@@ -238,6 +251,7 @@
         socket.on('statsUpdate', (stats) => {
             updateStats(stats);
             updateClientsGrid(stats.connectedClients);
+            updateGamesList(stats.games || []);
         });
         
         function updateStats(stats) {
@@ -260,8 +274,38 @@
                     <div class="client-info">ID: ${client.id.substring(0, 8)}...</div>
                     <div class="client-info">Score: ${client.score}</div>
                     <div class="client-info">Status: <span class="status ${client.status}">${client.status}</span></div>
+                    <div class="client-info">Mode: <strong>${(client.mode || '-') }</strong></div>
                 </div>
             `).join('');
+        }
+
+        function updateGamesList(games) {
+            const container = document.getElementById('gamesList');
+            if (!games || games.length === 0) {
+                container.innerHTML = '<p style="color: #585b70;">No active games</p>';
+                return;
+            }
+
+            const rows = games.map(g => {
+                const players = (g.players || []).map(p => p.nickname || p.id.substring(0,8)).join(' vs ');
+                const turn = g.currentTurn ? (g.players.find(p => p.id === g.currentTurn)?.nickname || g.currentTurn.substring(0,8)) : '-';
+                return `
+                    <div class="client-card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <div>
+                            <div class="client-nickname">${players}</div>
+                            <div class="client-info">Game ID: ${g.id}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="client-info">Mode: <strong>${g.mode || '-'}</strong></div>
+                            <div class="client-info">Status: ${g.status}</div>
+                            <div class="client-info">Turn: ${turn}</div>
+                            <div class="client-info">Timer: ${g.gameTimer ?? '-'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = rows;
         }
         
         function addLog(message) {
@@ -319,7 +363,8 @@
             .then(response => response.json())
             .then(stats => {
                 updateStats(stats);
-                updateClientsGrid(stats.connectedClients);
+                updateClientsGrid(stats.connectedClients || []);
+                updateGamesList(stats.games || []);
             })
             .catch(error => {
                 addLog('❌ Failed to load initial stats: ' + error.message);
