@@ -1,137 +1,190 @@
-# 🚢 Battleship Game - React & Node.js
+# 🚢 Battleship (Classic & Blitz) – React + TypeScript + Node + Socket.IO
 
-A real-time multiplayer Battleship game built with React, TypeScript, Node.js, Express, and Socket.IO. This implementation includes all the features specified in the requirements.
+Real‑time multiplayer Battleship with two modes (Classic & Blitz), power‑ups, pause/resume, head‑to‑head tracking, an admin dashboard, and mobile‑friendly ship placement. Frontend runs on Vite/React; backend is an Express + Socket.IO server with a lightweight admin UI.
 
-## ✨ Features Implemented
+## 🌟 Feature Highlights
 
-### Client Features
-- ✅ **Nickname Entry**: Players can enter a nickname when the game starts
-- ✅ **Welcome Message**: Welcome message appears on game start
-- ✅ **Player Info Display**: Nickname and score are displayed
-- ✅ **Ship Placement UI**: Grid interface with automatic ship placement
-- ✅ **Hidden Ship Positions**: Players cannot see each other's ship positions
-- ✅ **Game Timer**: Countdown timer (5 minutes per game)
-- ✅ **Hit/Miss Indicators**: Visual feedback for attack results
-- ✅ **Score System**: Points awarded when ships are destroyed
-- ✅ **Connected Clients Info**: View other connected players
-- ✅ **Predefined Server Connection**: Server IP and port are hardcoded
+### Core Gameplay
+- Classic turn‑based Battleship: alternate shots, 10s turn timer (auto passes when it hits 0).
+- Blitz mode: hit chaining (keep the turn on a hit), plus one‑time power‑ups per player.
+- Ship placement with touch support (tap to select/place; dedicated rotate button).
+- Hidden ships; real‑time hit/miss feedback with sound effects.
+- Automatic win detection & game over modal (includes head‑to‑head record vs opponent).
+- Rematch flow prefers last winner to start first when same pair meet again.
 
-### Server Features
-- ✅ **Admin UI**: Server interface showing concurrent clients
-- ✅ **Reset Functionality**: Button to reset all game state and scores
-- ✅ **Random First Player**: Server randomly selects who goes first
-- ✅ **Client Management**: Track and display connected clients
-- ✅ **Real-time Updates**: Live statistics and game state
+### Blitz Power‑Ups (once per player per match)
+| Power‑Up | Action | Effect | Consumes Turn | Special |
+|----------|--------|--------|---------------|---------|
+| Cannons  | 2x2 multi-shot | Fires at 4 cells; can win immediately | Yes | Chaining applies if any hit & defender not protected |
+| Scan     | 3x3 intel | Returns count of ship segments (no reveal) | Yes | Shows temporary overlay & pill |
+| Protect  | Defense | Prevents Blitz hit chaining once | Yes | Consumed after opponent’s next completed action |
 
-## Architecture
+Rule: One action per turn (normal shot OR one power‑up). Server enforces all constraints.
 
-### Frontend (React + TypeScript)
-- **App.tsx** - Main application component handling connection states
-- **Game.tsx** - Core game logic and state management
-- **Grid.tsx** - Reusable grid component for both player and opponent boards
-- **GameStatus.tsx** - Status message display component
-- **PlayerControls.tsx** - Ship placement and ready controls
+### Competitive & Session
+- Head‑to‑head win counts per opponent (stored & displayed).
+- Score tracking (wins increment your score; forfeit/disconnect awards opponent a win).
+- Automatic nickname persistence (localStorage) across mode switches.
 
-### Backend Requirements
-This frontend connects to a Socket.IO server. You'll need a backend server running on `http://localhost:3000` with the following events:
+### UX & Interface
+- Collapsible in‑match chat (Blitz only) with unread badge when closed.
+- Pause modal with dual resume confirmation (both must press Resume).
+- Settings modal (themes, avatar, mute, how‑to‑play).
+- Mode badge + lobby/waiting mode indicators.
+- Scan overlay + hover previews (2x2 for Cannons, 3x3 for Scan) for precise targeting.
 
-- `connect` - Player connection
-- `waiting` - Waiting for opponent
-- `gameStart` - Game begins
-- `shipsPlaced` - Player ready with ship placement
-- `fire` - Player attacks coordinates
-- `fireResult` - Hit/miss results
-- `yourTurn`/`opponentTurn` - Turn management
-- `gameOver` - Game completion
-- `opponentDisconnected` - Opponent leaves
+### Admin & Server Ops
+- Admin dashboard (served from the server root) showing live stats (active games, players, modes).
+- `POST /api/reset` resets entire server state and notifies clients.
+- Real‑time stats diff pushed to admin namespace (`/admin`).
 
-## Getting Started
+## 🧱 Architecture Overview
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Installation
-
-1. Install dependencies:
-```bash
-npm install
+```
+frontend (Vite, React, TS)            backend (Express + Socket.IO)
+┌──────────────────────────┐         ┌────────────────────────────┐
+│ App.tsx                  │  HTTP   │ server.js                  │
+│  ├─ ModeMenu             │ <-----> │  REST: /api/stats /api/reset│
+│  ├─ Game (classic/blitz) │         │  Socket events (room/game) │
+│  └─ Settings / Chat etc. │         │  Admin namespace (/admin)  │
+└──────────────────────────┘         └────────────────────────────┘
 ```
 
-2. Start the development server:
+### Key Frontend Components
+- `App.tsx`: Mode selection, global settings, nickname persistence.
+- `Game.tsx`: Phases, boards, power‑ups, turn logic, overlays, pause/rematch.
+- `Grid.tsx`: Board rendering + hover highlighting.
+- `ShipPlacement.tsx`: Interactive placement (desktop + touch).
+- `GameStatus.tsx`: Timer, player scores, whose turn, pause control.
+- `Chat.tsx`: Collapsible Blitz chat widget.
+- `SettingsModal.tsx` / `HowToPlayModal.tsx`: Preferences & help.
+
+### Backend Game Data (per game)
+- `players[]`: two client objects with boards & sockets.
+- `currentTurn`: player id whose turn it is.
+- `gameTimer`: remaining seconds (10 → 0 loops).
+- `powerUpsUsed[playerId]`: usage flags.
+- `protectNextTurn[playerId]`: protection against hit chaining.
+- `paused`, `resumeVotes`, `mode`.
+
+## 🔌 Socket Event Summary
+
+Client → Server:
+- `setNickname(nickname)`
+- `joinQueue({ mode })`
+- `shipsPlaced(board)`
+- `fire({ row, col })`
+- `usePowerUp({ type, row?, col? })`
+- `pauseGame()` / `resumeGame()` / `forfeit()`
+- `sendChatMessage({ message })` (Blitz only)
+
+Server → Client (selected):
+- `nicknameSet`, `clientsInfo`
+- `waiting`, `gameStart`, `opponentReady`, `allPlayersReady`
+- `yourTurn`, `opponentTurn`, `timerUpdate`
+- `fireResult({ row, col, result, isOwnGrid })`
+- `scanResult({ row, col, count })`
+- `gamePaused`, `resumeVoteUpdate`, `gameResumed`
+- `gameOver({ result })`, `opponentDisconnected`, `serverReset`
+- `chatMessage`
+
+## 🕹️ Game Flow
+1. Nickname (auto‑restored if previously set) → Lobby.
+2. Join queue (mode specific). If a peer waits, a game starts (first turn selected—recent winner preferred if rematch pair).
+3. Both place ships → Playing begins; timer starts for first player.
+4. Turns: Classic alternates; Blitz may chain on hits (unless Protect active). Timer auto passes on expiry.
+5. Power‑ups: Use once; server validates; some switch turn immediately.
+6. Win: All opponent ship segments hit → game over modal & stats update.
+7. Rematch or return lobby resets local state appropriately.
+
+## 🧪 Local Development
+
+Clone and install:
 ```bash
+git clone <repo-url>
+cd NetcentricProject
+npm install
+cd server && npm install && cd ..
+```
+
+Run both:
+```bash
+# Frontend (root)
+npm run dev
+
+# Backend (in /server, separate terminal)
 npm run dev
 ```
 
-3. Open your browser to `http://localhost:5173`
+Defaults:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001 (Socket.IO + admin UI)
 
-### Backend Setup
-You'll need to run a compatible Socket.IO server on port 3000. See the original Node.js server implementation for reference.
+Set the frontend to use the local server automatically (it resolves host:3001). To override, export `VITE_SOCKET_URL`.
 
-## Available Scripts
+## 🌍 Deployment Strategy
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+Because Socket.IO with long‑lived WebSockets isn’t ideal on serverless edge runtimes, deploy as two services:
+1. **Backend**: Render / Railway / Fly.io (Node process). Set env:
+   - `NODE_ENV=production`
+   - `LAN_CLIENT=https://your-frontend-domain`
+2. **Frontend**: Vercel (static build via `npm run build`). Set env:
+   - `VITE_SOCKET_URL=https://your-backend-domain`
 
-## Game Rules
-
-1. **Ship Placement**: Ships are pre-placed in a fixed pattern
-2. **Turn-based Combat**: Players alternate firing at opponent's grid
-3. **Hit/Miss Feedback**: Visual indicators for successful hits and misses
-4. **Win Condition**: Sink all opponent ships to win
-
-## Technology Stack
-
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Socket.IO Client** - Real-time communication
-- **CSS** - Component styling
-
-## Development
-
-The project uses modern React patterns:
-- Function components with hooks
-- TypeScript for type safety
-- Clean component separation
-- Responsive CSS Grid layout
-
-## Deployment
-
-Build the project for production:
+Build frontend:
 ```bash
 npm run build
 ```
+Output in `dist/` is static deployable.
 
-The `dist` folder contains the production-ready files that can be served by any static web server.
+## 🔐 Environment Variables
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| VITE_SOCKET_URL | Frontend | Override auto host:3001 for Socket.IO endpoint |
+| LAN_CLIENT | Backend | Allowed origin for CORS in production |
+| PORT | Backend | Listening port (platform provided) |
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🧠 Blitz Power‑Up Logic (Server Enforcement)
+- Validate: mode === 'blitz', player turn, not paused, not already used.
+- `scan`: count 'S' in bounded 3x3 → emit result only to requester → turn passes.
+- `protect`: set defender’s `protectNextTurn` → turn passes.
+- `cannons`: 2x2 multi-shot → emit each cell’s `fireResult`; if any hit & defender not protected → chaining keeps turn; else turn passes (consuming protection if active).
+- Protection consumption: cleared after a defended action completes when it blocked chaining.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠 Scripts
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Vite dev server (frontend) |
+| `npm run build` | TypeScript build + Vite production bundle |
+| `npm run preview` | Preview built frontend |
+| `npm run lint` | ESLint code quality |
+| `npm run dev` (server/) | Nodemon backend hot reload |
+| `npm start` (server/) | Production start backend |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📁 Project Layout
 ```
+root/
+  src/                # React source
+  server/             # Express + Socket.IO server
+  public/             # Frontend static assets
+  dist/               # Build output (after npm run build)
+```
+
+## 🚨 Troubleshooting
+- Import errors (e.g., missing `GameBlitz.tsx`): Ensure component exists or switch to using `<Game mode="blitz" />` directly.
+- CORS issues: Confirm `LAN_CLIENT` matches deployed frontend origin exactly (including protocol).
+- Socket not connecting on mobile LAN: Set `VITE_SOCKET_URL` explicitly to the backend’s IP:PORT.
+- Stuck on “Setting nickname…”: Backend not reachable; check server log and env URL.
+
+## 🧩 Possible Next Enhancements
+- Spectator mode.
+- Persistence (DB) for long‑term H2H stats.
+- Ranked matchmaking / ELO.
+- Multi‑ship placement randomization or manual drag rotate on desktop.
+- Replay log or analytics view.
+
+## 📄 License
+Add a license file (e.g., MIT) if distributing publicly.
+
+---
+Enjoy sinking ships! Contributions and feature ideas are welcome.
